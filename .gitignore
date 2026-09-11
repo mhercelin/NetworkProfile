@@ -1,0 +1,11 @@
+# Build
+/build/bin/
+*.exe
+*.syso
+
+# Frontend Wails
+/frontend/node_modules/
+/frontend/dist/
+
+# Aperçu de maquettes généré (les sources .dc.html sont versionnées)
+/design/networkprofile-ecrans.html

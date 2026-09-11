@@ -1,0 +1,179 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; background: #f6f7f9; font-family: 'IBM Plex Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+    a { color: oklch(0.52 0.11 195); text-decoration: none; }
+    a:hover { color: oklch(0.44 0.10 195); }
+  </style>
+</helmet>
+
+<div style="width: 1100px; height: 720px; display: flex; background: #f6f7f9; color: #1b2026; overflow: hidden;">
+
+  <aside style="width: 208px; flex: 0 0 208px; background: #f0f2f5; border-right: 1px solid #e6e9ed; display: flex; flex-direction: column; padding: 16px 12px;">
+    <div style="display: flex; align-items: center; gap: 9px; padding: 0 6px 18px 6px;">
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="oklch(0.52 0.11 195)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="7.4" y="2.4" width="5.2" height="5.2" rx="1.2"></rect>
+        <rect x="1.6" y="12.4" width="5.2" height="5.2" rx="1.2"></rect>
+        <rect x="13.2" y="12.4" width="5.2" height="5.2" rx="1.2"></rect>
+        <path d="M10 7.6v2.6M4.2 12.4v-2.2h11.6v2.2"></path>
+      </svg>
+      <span style="font-size: 13.5px; font-weight: 600; letter-spacing: -0.1px; color: #1b2026;">NetworkProfile</span>
+    </div>
+
+    <div style="font-size: 10px; font-weight: 500; letter-spacing: 0.8px; color: #8a929c; padding: 0 6px 8px 6px;">NAVIGATION</div>
+    <nav style="display: flex; flex-direction: column; gap: 2px;">
+      <div style="display: flex; align-items: center; gap: 9px; height: 32px; padding: 0 10px; border-radius: 5px; color: #5b646f; font-size: 12.5px;">
+        <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"><rect x="2.4" y="3" width="11.2" height="3.4" rx="1"></rect><rect x="2.4" y="9.6" width="11.2" height="3.4" rx="1"></rect></svg>
+        Profils
+      </div>
+      <div style="display: flex; align-items: center; gap: 9px; height: 32px; padding: 0 10px; border-radius: 5px; background: #e4e8ec; color: #1b2026; font-size: 12.5px; font-weight: 500;">
+        <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"><path d="M9.2 1.9L3.6 9.1h3.5l-.5 5 5.6-7.4H8.5z"></path></svg>
+        Changement rapide
+      </div>
+      <div style="display: flex; align-items: center; gap: 9px; height: 32px; padding: 0 10px; border-radius: 5px; color: #5b646f; font-size: 12.5px;">
+        <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><circle cx="8" cy="8" r="5.7"></circle><path d="M8 4.8V8.2l2.3 1.5"></path></svg>
+        Historique
+      </div>
+      <div style="display: flex; align-items: center; gap: 9px; height: 32px; padding: 0 10px; border-radius: 5px; color: #5b646f; font-size: 12.5px;">
+        <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M2.6 5.2h10.8M2.6 10.8h10.8"></path><circle cx="6" cy="5.2" r="1.7" fill="#f0f2f5"></circle><circle cx="10.4" cy="10.8" r="1.7" fill="#f0f2f5"></circle></svg>
+        Réglages
+      </div>
+    </nav>
+
+    <div style="flex: 1;"></div>
+
+    <div style="border-top: 1px solid #e6e9ed; padding: 12px 6px 0 6px; display: flex; flex-direction: column; gap: 7px;">
+      <div style="display: flex; align-items: center; gap: 7px; font-size: 11px; color: oklch(0.52 0.11 195);">
+        <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M8 1.9l4.9 1.9v3.9c0 2.9-2.1 5.2-4.9 6.3-2.8-1.1-4.9-3.4-4.9-6.3V3.8z"></path><path d="M6.1 7.9l1.5 1.5 2.7-2.9"></path></svg>
+        Mode administrateur
+      </div>
+      <div style="font-size: 11px; color: #8a929c; font-family: 'IBM Plex Mono', monospace;">v0.1.0</div>
+    </div>
+  </aside>
+
+  <section style="flex: 1; min-width: 0; display: flex; flex-direction: column;">
+
+    <header style="height: 52px; flex: 0 0 52px; background: #ffffff; border-bottom: 1px solid #e6e9ed; display: flex; align-items: center; justify-content: space-between; padding: 0 20px;">
+      <div style="display: flex; align-items: baseline; gap: 10px;">
+        <h1 style="margin: 0; font-size: 15px; font-weight: 600; letter-spacing: -0.2px; color: #1b2026;">Changement rapide</h1>
+        <span style="font-size: 11.5px; color: #8a929c;">configuration temporaire, non enregistrée</span>
+      </div>
+    </header>
+
+    <div style="flex: 1; min-height: 0; display: flex; gap: 18px; padding: 20px;">
+
+      <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; background: #ffffff; border: 1px solid #e0e4e9; border-radius: 6px;">
+        <div style="height: 44px; flex: 0 0 44px; display: flex; align-items: center; padding: 0 16px; border-bottom: 1px solid #e6e9ed; font-size: 13px; font-weight: 600; color: #1b2026;">Nouvelle configuration</div>
+
+        <div style="padding: 16px; display: flex; flex-direction: column; gap: 16px;">
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <div style="flex: 1; min-width: 0; display: flex; align-items: center; gap: 8px; height: 32px; padding: 0 10px; background: #ffffff; border: 1px solid #d7dce2; border-radius: 5px;">
+              <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="#5b646f" stroke-width="1.4" stroke-linejoin="round"><rect x="2.4" y="4.6" width="11.2" height="7.6" rx="1.2"></rect><path d="M5.6 4.6v3M8 4.6v3M10.4 4.6v3"></path></svg>
+              <span style="flex: 1; font-size: 12.5px; color: #1b2026;">Ethernet — Intel I219-LM</span>
+              <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="#8a929c" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4.4 6.4L8 10l3.6-3.6"></path></svg>
+            </div>
+            <div style="display: flex; height: 32px; padding: 2px; background: #f0f2f5; border: 1px solid #dde1e6; border-radius: 6px;">
+              <div style="display: flex; align-items: center; padding: 0 13px; border-radius: 4px; background: #ffffff; border: 1px solid #d7dce2; color: #1b2026; font-size: 12px; font-weight: 500;">Statique</div>
+              <div style="display: flex; align-items: center; padding: 0 13px; border-radius: 4px; color: #7b848f; font-size: 12px;">DHCP</div>
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px;">
+            <div style="display: flex; flex-direction: column; gap: 5px;">
+              <span style="font-size: 11px; color: #5b646f;">Adresse IP</span>
+              <div style="height: 32px; display: flex; align-items: center; padding: 0 10px; background: #ffffff; border: 1px solid oklch(0.52 0.11 195 / 0.55); box-shadow: 0 0 0 3px oklch(0.52 0.11 195 / 0.10); border-radius: 5px; font-family: 'IBM Plex Mono', monospace; font-size: 12.5px; color: #1b2026;">192.168.0.15</div>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 5px;">
+              <span style="font-size: 11px; color: #5b646f;">Masque de sous-réseau</span>
+              <div style="height: 32px; display: flex; align-items: center; padding: 0 10px; background: #ffffff; border: 1px solid #d7dce2; border-radius: 5px; font-family: 'IBM Plex Mono', monospace; font-size: 12.5px; color: #1b2026;">255.255.255.0</div>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 5px;">
+              <span style="font-size: 11px; color: #5b646f;">Passerelle</span>
+              <div style="height: 32px; display: flex; align-items: center; padding: 0 10px; background: #ffffff; border: 1px solid #d7dce2; border-radius: 5px; font-family: 'IBM Plex Mono', monospace; font-size: 12.5px; color: #a3abb4;">optionnel</div>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 5px;">
+              <span style="font-size: 11px; color: #5b646f;">DNS primaire</span>
+              <div style="height: 32px; display: flex; align-items: center; padding: 0 10px; background: #ffffff; border: 1px solid #d7dce2; border-radius: 5px; font-family: 'IBM Plex Mono', monospace; font-size: 12.5px; color: #a3abb4;">optionnel</div>
+            </div>
+          </div>
+        </div>
+
+        <div style="flex: 1;"></div>
+
+        <div style="padding: 0 16px 16px 16px; display: flex; flex-direction: column; gap: 5px;">
+          <span style="font-size: 11px; color: #5b646f;">Commande appliquée</span>
+          <div style="padding: 10px 12px; background: #f4f6f8; border: 1px solid #e6e9ed; border-radius: 5px; font-family: 'IBM Plex Mono', monospace; font-size: 11px; line-height: 1.65; color: #5b646f; white-space: pre-wrap; word-break: break-word;">netsh interface ip set address name="Ethernet" static 192.168.0.15 255.255.255.0
+netsh interface ip set dns name="Ethernet" dhcp</div>
+        </div>
+
+        <div style="height: 56px; flex: 0 0 56px; border-top: 1px solid #e6e9ed; display: flex; align-items: center; justify-content: space-between; padding: 0 16px;">
+          <div style="display: flex; align-items: center; gap: 7px; height: 30px; padding: 0 12px; background: #ffffff; border: 1px solid #d7dce2; border-radius: 5px; color: #3a434e; font-size: 12.5px;">
+            <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3.4 2.8h7.2L13.2 5.4v7.8H3.4z"></path><path d="M6 2.8v3.4h4V2.8M6 13.2V9.6h4.4v3.6"></path></svg>
+            Enregistrer comme profil
+          </div>
+          <div style="display: flex; align-items: center; gap: 7px; height: 30px; padding: 0 16px; background: oklch(0.52 0.11 195); border-radius: 5px; color: #ffffff; font-size: 12.5px; font-weight: 600;">
+            <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M9.2 1.9L3.6 9.1h3.5l-.5 5 5.6-7.4H8.5z"></path></svg>
+            Appliquer maintenant
+          </div>
+        </div>
+      </div>
+
+      <div style="width: 296px; flex: 0 0 296px; display: flex; flex-direction: column; background: #ffffff; border: 1px solid #e0e4e9; border-radius: 6px;">
+        <div style="height: 42px; flex: 0 0 42px; display: flex; align-items: center; padding: 0 14px; border-bottom: 1px solid #e6e9ed; font-size: 10px; font-weight: 500; letter-spacing: 0.8px; color: #8a929c;">ÉTAT ACTUEL</div>
+
+        <div style="padding: 12px 14px; border-bottom: 1px solid #eef0f3; display: flex; flex-direction: column; gap: 7px;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="#5b646f" stroke-width="1.4" stroke-linejoin="round"><rect x="2.4" y="4.6" width="11.2" height="7.6" rx="1.2"></rect><path d="M5.6 4.6v3M8 4.6v3M10.4 4.6v3"></path></svg>
+            <span style="flex: 1; font-size: 12.5px; font-weight: 500; color: #1b2026;">Ethernet</span>
+            <span style="display: inline-flex; align-items: center; height: 19px; padding: 0 6px; border-radius: 4px; background: oklch(0.52 0.11 70 / 0.10); border: 1px solid oklch(0.52 0.11 70 / 0.30); color: oklch(0.46 0.10 70); font-size: 10px; font-weight: 500; letter-spacing: 0.3px;">STATIQUE</span>
+          </div>
+          <div style="display: flex; justify-content: space-between;"><span style="font-size: 11px; color: #7b848f;">Adresse</span><span style="font-family: 'IBM Plex Mono', monospace; font-size: 11.5px; color: #2d3540;">192.168.1.50/24</span></div>
+          <div style="display: flex; justify-content: space-between;"><span style="font-size: 11px; color: #7b848f;">Passerelle</span><span style="font-family: 'IBM Plex Mono', monospace; font-size: 11.5px; color: #2d3540;">192.168.1.1</span></div>
+          <div style="display: flex; justify-content: space-between;"><span style="font-size: 11px; color: #7b848f;">DNS</span><span style="font-family: 'IBM Plex Mono', monospace; font-size: 11.5px; color: #2d3540;">192.168.1.1</span></div>
+        </div>
+
+        <div style="padding: 12px 14px; border-bottom: 1px solid #eef0f3; display: flex; flex-direction: column; gap: 7px;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="#5b646f" stroke-width="1.4" stroke-linecap="round"><path d="M2.2 6.3a8.6 8.6 0 0 1 11.6 0"></path><path d="M4.6 8.9a5.2 5.2 0 0 1 6.8 0"></path><circle cx="8" cy="11.8" r="0.95" fill="#5b646f" stroke="none"></circle></svg>
+            <span style="flex: 1; font-size: 12.5px; font-weight: 500; color: #1b2026;">ATELIER-5G</span>
+            <span style="display: inline-flex; align-items: center; height: 19px; padding: 0 6px; border-radius: 4px; background: #f6f7f9; border: 1px solid #dde1e6; color: #5b646f; font-size: 10px; font-weight: 500; letter-spacing: 0.3px;">DHCP</span>
+          </div>
+          <div style="display: flex; justify-content: space-between;"><span style="font-size: 11px; color: #7b848f;">Adresse</span><span style="font-family: 'IBM Plex Mono', monospace; font-size: 11.5px; color: #2d3540;">10.4.12.87/24</span></div>
+          <div style="display: flex; justify-content: space-between;"><span style="font-size: 11px; color: #7b848f;">Passerelle</span><span style="font-family: 'IBM Plex Mono', monospace; font-size: 11.5px; color: #2d3540;">10.4.12.1</span></div>
+          <div style="display: flex; justify-content: space-between;"><span style="font-size: 11px; color: #7b848f;">DNS</span><span style="font-family: 'IBM Plex Mono', monospace; font-size: 11.5px; color: #2d3540;">10.4.12.1</span></div>
+        </div>
+
+        <div style="padding: 12px 14px; display: flex; flex-direction: column; gap: 7px;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="#a3abb4" stroke-width="1.4" stroke-linejoin="round"><rect x="2.4" y="4.6" width="11.2" height="7.6" rx="1.2"></rect><path d="M5.6 4.6v3M8 4.6v3M10.4 4.6v3"></path></svg>
+            <span style="flex: 1; font-size: 12.5px; font-weight: 500; color: #8a929c;">Ethernet 2 — Dock USB-C</span>
+          </div>
+          <div style="display: flex; justify-content: space-between;"><span style="font-size: 11px; color: #7b848f;">État</span><span style="font-family: 'IBM Plex Mono', monospace; font-size: 11.5px; color: #a3abb4;">non connecté</span></div>
+        </div>
+
+        <div style="flex: 1;"></div>
+
+        <div style="padding: 12px 14px; border-top: 1px solid #e6e9ed; display: flex; flex-direction: column; gap: 4px;">
+          <span style="font-size: 10px; font-weight: 500; letter-spacing: 0.8px; color: #8a929c;">DERNIÈRE APPLICATION</span>
+          <div style="display: flex; justify-content: space-between; align-items: baseline;">
+            <span style="font-size: 12px; color: #2d3540;">Atelier — Ligne 1</span>
+            <span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #8a929c;">il y a 12 min</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+</div>
+</x-dc>
+</body>
+</html>

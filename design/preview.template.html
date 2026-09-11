@@ -1,0 +1,197 @@
+<title>NetworkProfile</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+  :root {
+    --ground: #dfe3e8;
+    --ink: #171b20;
+    --ink-2: #4d5661;
+    --ink-3: #79828d;
+    --rule: #c6ccd4;
+    --accent: oklch(0.48 0.11 195);
+    --shadow: 0 1px 2px rgba(18, 24, 31, .10), 0 14px 34px -10px rgba(18, 24, 31, .28);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground: #14171b;
+      --ink: #e6e9ec;
+      --ink-2: #a6aeb8;
+      --ink-3: #7b848f;
+      --rule: #2b3139;
+      --accent: oklch(0.76 0.11 195);
+      --shadow: 0 1px 2px rgba(0, 0, 0, .45), 0 18px 44px -12px rgba(0, 0, 0, .65);
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground: #14171b;
+    --ink: #e6e9ec;
+    --ink-2: #a6aeb8;
+    --ink-3: #7b848f;
+    --rule: #2b3139;
+    --accent: oklch(0.76 0.11 195);
+    --shadow: 0 1px 2px rgba(0, 0, 0, .45), 0 18px 44px -12px rgba(0, 0, 0, .65);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--ground);
+    color: var(--ink);
+    font-family: 'IBM Plex Sans', system-ui, -apple-system, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .page {
+    max-width: 1148px;
+    margin: 0 auto;
+    padding: 56px 24px 72px;
+  }
+
+  .eyebrow {
+    font-family: 'IBM Plex Mono', ui-monospace, monospace;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 1.4px;
+    color: var(--accent);
+    margin: 0 0 14px;
+  }
+
+  h1 {
+    margin: 0 0 14px;
+    font-size: 38px;
+    font-weight: 600;
+    letter-spacing: -0.9px;
+    line-height: 1.1;
+    text-wrap: balance;
+  }
+
+  .lead {
+    margin: 0;
+    max-width: 60ch;
+    font-size: 15.5px;
+    line-height: 1.62;
+    color: var(--ink-2);
+    text-wrap: pretty;
+  }
+
+  .specs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 22px;
+    margin-top: 26px;
+    padding-top: 18px;
+    border-top: 1px solid var(--rule);
+    font-family: 'IBM Plex Mono', ui-monospace, monospace;
+    font-size: 12px;
+    color: var(--ink-3);
+  }
+
+  .specs span { display: inline-flex; gap: 7px; }
+  .specs b { font-weight: 500; color: var(--ink-2); }
+
+  .shots {
+    display: flex;
+    flex-direction: column;
+    gap: 52px;
+    margin-top: 56px;
+  }
+
+  figure { margin: 0; }
+
+  figcaption { margin-bottom: 16px; }
+
+  h2 {
+    margin: 0 0 7px;
+    font-size: 19px;
+    font-weight: 600;
+    letter-spacing: -0.3px;
+  }
+
+  .note {
+    margin: 0;
+    max-width: 72ch;
+    font-size: 13.5px;
+    line-height: 1.6;
+    color: var(--ink-2);
+    text-wrap: pretty;
+  }
+
+  .frame {
+    width: 100%;
+    aspect-ratio: 1100 / 720;
+    overflow: hidden;
+    border: 1px solid var(--rule);
+    border-radius: 10px;
+    box-shadow: var(--shadow);
+    background: #f6f7f9;
+  }
+
+  .screen { transform-origin: top left; }
+
+  footer {
+    margin-top: 56px;
+    padding-top: 18px;
+    border-top: 1px solid var(--rule);
+    font-size: 12.5px;
+    color: var(--ink-3);
+  }
+
+  @media (max-width: 640px) {
+    .page { padding: 36px 16px 48px; }
+    h1 { font-size: 29px; }
+  }
+</style>
+
+<div class="page">
+  <header>
+    <p class="eyebrow">UTILITAIRE WINDOWS · GO + WAILS</p>
+    <h1>NetworkProfile</h1>
+    <p class="lead">Bascule entre des dizaines de configurations réseau — adresse, masque, passerelle, DNS — sur les cartes Ethernet et Wi-Fi d'un poste Windows 11.</p>
+    <div class="specs">
+      <span><b>Cible</b> Windows 11</span>
+      <span><b>Stack</b> Go + Wails v2</span>
+      <span><b>Fenêtre</b> 1100 × 720</span>
+      <span><b>Stockage</b> profiles.yaml</span>
+    </div>
+  </header>
+
+  <div class="shots">
+    <figure>
+      <figcaption>
+        <h2>Profils</h2>
+        <p class="note">Écran par défaut : une ligne par profil, l'état réel des cartes en bandeau, un bouton Appliquer sur chaque ligne. Le profil actif est marqué à gauche.</p>
+      </figcaption>
+      <div class="frame"><div class="screen"><!--SCREEN_MAIN--></div></div>
+    </figure>
+
+    <figure>
+      <figcaption>
+        <h2>Édition d'un profil</h2>
+        <p class="note">Un profil vise une ou plusieurs interfaces. Ici Ethernet en statique et Wi-Fi avec sélection d'un SSID déjà enregistré par Windows — c'est cette même structure qui permet au profil « Défaut » de remettre les deux cartes en DHCP.</p>
+      </figcaption>
+      <div class="frame"><div class="screen"><!--SCREEN_EDIT--></div></div>
+    </figure>
+
+    <figure>
+      <figcaption>
+        <h2>Changement rapide</h2>
+        <p class="note">Onglet séparé pour une adresse temporaire, sans créer de profil. L'état courant des trois interfaces reste visible à droite, et la commande netsh réellement exécutée est affichée avant l'application.</p>
+      </figcaption>
+      <div class="frame"><div class="screen"><!--SCREEN_QUICK--></div></div>
+    </figure>
+  </div>
+
+  <footer>Maquettes statiques — aucun comportement interactif. IBM Plex Sans / IBM Plex Mono.</footer>
+</div>
+
+<script>
+  const fit = () => {
+    document.querySelectorAll('.frame').forEach((frame) => {
+      const screen = frame.querySelector('.screen');
+      if (screen) screen.style.transform = 'scale(' + (frame.clientWidth / 1100) + ')';
+    });
+  };
+  fit();
+  window.addEventListener('resize', fit);
+  new ResizeObserver(fit).observe(document.body);
+</script>
