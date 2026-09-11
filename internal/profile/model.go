@@ -88,25 +88,42 @@ func (p Profile) Validate() error {
 	return nil
 }
 
+// Validate checks a target on its own, as the quick change screen needs before
+// applying a configuration that is never saved.
+func (t Target) Validate() error {
+	if errs := t.validate(""); len(errs) > 0 {
+		return &ValidationError{Errors: errs}
+	}
+	return nil
+}
+
 func (t Target) validate(path string) []FieldError {
 	var errs []FieldError
 
 	if strings.TrimSpace(t.Interface) == "" {
-		errs = append(errs, FieldError{path + ".interface", "l'interface est obligatoire"})
+		errs = append(errs, FieldError{field(path, "interface"), "l'interface est obligatoire"})
 	}
 
 	switch t.Mode {
 	case ModeDHCP:
 		if t.Address != "" || t.Mask != "" || t.Gateway != "" || len(t.DNS) > 0 {
-			errs = append(errs, FieldError{path + ".mode", "un profil DHCP ne porte ni adresse, ni masque, ni passerelle, ni DNS"})
+			errs = append(errs, FieldError{field(path, "mode"), "un profil DHCP ne porte ni adresse, ni masque, ni passerelle, ni DNS"})
 		}
 	case ModeStatic:
 		errs = append(errs, t.validateStatic(path)...)
 	default:
-		errs = append(errs, FieldError{path + ".mode", `mode inconnu (attendu "static" ou "dhcp")`})
+		errs = append(errs, FieldError{field(path, "mode"), `mode inconnu (attendu "static" ou "dhcp")`})
 	}
 
 	return errs
+}
+
+// field names a target field, with or without the enclosing profile path.
+func field(path, name string) string {
+	if path == "" {
+		return name
+	}
+	return path + "." + name
 }
 
 func (t Target) validateStatic(path string) []FieldError {
@@ -114,27 +131,27 @@ func (t Target) validateStatic(path string) []FieldError {
 
 	addr, addrOK := parseIPv4(t.Address)
 	if !addrOK {
-		errs = append(errs, FieldError{path + ".address", "adresse IPv4 invalide"})
+		errs = append(errs, FieldError{field(path, "address"), "adresse IPv4 invalide"})
 	}
 
 	prefixLen, maskOK := maskPrefixLen(t.Mask)
 	if !maskOK {
-		errs = append(errs, FieldError{path + ".mask", "masque de sous-réseau IPv4 invalide"})
+		errs = append(errs, FieldError{field(path, "mask"), "masque de sous-réseau IPv4 invalide"})
 	}
 
 	if t.Gateway != "" {
 		gw, gwOK := parseIPv4(t.Gateway)
 		switch {
 		case !gwOK:
-			errs = append(errs, FieldError{path + ".gateway", "passerelle IPv4 invalide"})
+			errs = append(errs, FieldError{field(path, "gateway"), "passerelle IPv4 invalide"})
 		case addrOK && maskOK && !sameSubnet(addr, gw, prefixLen):
-			errs = append(errs, FieldError{path + ".gateway", "la passerelle n'appartient pas au sous-réseau de l'adresse"})
+			errs = append(errs, FieldError{field(path, "gateway"), "la passerelle n'appartient pas au sous-réseau de l'adresse"})
 		}
 	}
 
 	for i, d := range t.DNS {
 		if _, ok := parseIPv4(d); !ok {
-			errs = append(errs, FieldError{fmt.Sprintf("%s.dns[%d]", path, i), "serveur DNS IPv4 invalide"})
+			errs = append(errs, FieldError{fmt.Sprintf("%s[%d]", field(path, "dns"), i), "serveur DNS IPv4 invalide"})
 		}
 	}
 

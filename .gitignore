@@ -5,7 +5,12 @@
 
 # Frontend Wails
 /frontend/node_modules/
-/frontend/dist/
+# Le dossier doit exister meme vide : main.go l'embarque avec //go:embed
+/frontend/dist/*
+!/frontend/dist/.gitkeep
 
 # Aperçu de maquettes généré (les sources .dc.html sont versionnées)
 /design/networkprofile-ecrans.html
+
+# Liaisons JS regenerees par wails a chaque build
+/frontend/wailsjs/go/
