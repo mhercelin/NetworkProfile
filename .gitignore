@@ -14,3 +14,6 @@
 
 # Liaisons JS regenerees par wails a chaque build
 /frontend/wailsjs/go/
+
+# Empreinte de cache ecrite par wails
+/frontend/package.json.md5

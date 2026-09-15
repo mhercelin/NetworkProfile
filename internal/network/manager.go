@@ -12,17 +12,17 @@ const (
 // the Windows IP Helper API rather than parsed out of netsh, whose output is
 // translated into the language of the running Windows.
 type Interface struct {
-	ID          string // adapter GUID, "{A1B2...}", stable across renames
-	Name        string // friendly name, the one netsh takes: "Ethernet 2"
-	Description string // adapter model, e.g. "Intel(R) I211 Gigabit"
-	Kind        Kind
-	Virtual     bool // Hyper-V, WSL and other software adapters
-	Up          bool
-	DHCP        bool
-	Address     string
-	Mask        string
-	Gateway     string
-	DNS         []string
+	ID          string   `json:"id"`          // adapter GUID, "{A1B2...}", stable across renames
+	Name        string   `json:"name"`        // friendly name, the one netsh takes: "Ethernet 2"
+	Description string   `json:"description"` // adapter model, e.g. "Intel(R) I211 Gigabit"
+	Kind        Kind     `json:"kind"`
+	Virtual     bool     `json:"virtual"` // Hyper-V, WSL and other software adapters
+	Up          bool     `json:"up"`
+	DHCP        bool     `json:"dhcp"`
+	Address     string   `json:"address"`
+	Mask        string   `json:"mask"`
+	Gateway     string   `json:"gateway"`
+	DNS         []string `json:"dns"`
 }
 
 // StaticConfig is a fixed address to apply to an interface.

@@ -20,20 +20,20 @@ const (
 // may carry an SSID, naming a network Windows already holds credentials for;
 // leaving it empty keeps the interface on its current network.
 type Target struct {
-	Interface string   `yaml:"interface"`
-	Mode      Mode     `yaml:"mode"`
-	SSID      string   `yaml:"ssid,omitempty"`
-	Address   string   `yaml:"address,omitempty"`
-	Mask      string   `yaml:"mask,omitempty"`
-	Gateway   string   `yaml:"gateway,omitempty"`
-	DNS       []string `yaml:"dns,omitempty"`
+	Interface string   `yaml:"interface" json:"interface"`
+	Mode      Mode     `yaml:"mode" json:"mode"`
+	SSID      string   `yaml:"ssid,omitempty" json:"ssid,omitempty"`
+	Address   string   `yaml:"address,omitempty" json:"address,omitempty"`
+	Mask      string   `yaml:"mask,omitempty" json:"mask,omitempty"`
+	Gateway   string   `yaml:"gateway,omitempty" json:"gateway,omitempty"`
+	DNS       []string `yaml:"dns,omitempty" json:"dns,omitempty"`
 }
 
 // Profile is a named set of targets applied together.
 type Profile struct {
-	ID      string   `yaml:"id"`
-	Name    string   `yaml:"name"`
-	Targets []Target `yaml:"targets"`
+	ID      string   `yaml:"id" json:"id"`
+	Name    string   `yaml:"name" json:"name"`
+	Targets []Target `yaml:"targets" json:"targets"`
 }
 
 // FieldError locates a problem at a field path such as "targets[1].gateway".
