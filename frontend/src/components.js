@@ -2,7 +2,10 @@ import { icons } from './icons.js'
 import { cidr, esc } from './format.js'
 
 export function ifaceIcon(kind, size = 12) {
-  return kind === 'wifi' ? icons.wifi(size) : icons.ethernet(size)
+  const wifi = kind === 'wifi'
+  return `<span class="iface-icon iface-icon--${wifi ? 'wifi' : 'ethernet'}">${
+    wifi ? icons.wifi(size) : icons.ethernet(size)
+  }</span>`
 }
 
 export function modeBadge(isStatic) {

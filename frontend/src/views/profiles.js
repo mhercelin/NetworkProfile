@@ -56,7 +56,7 @@ function row(profile, state) {
   return `
     <div class="row${active ? ' row--active' : ''}">
       <div class="col-name">
-        <span class="row__name">${esc(profile.name)}</span>
+        <span class="row__name" title="${esc(profile.name)}">${esc(profile.name)}</span>
         <span class="row__sub">${subtitle(targets, state)}</span>
       </div>
       <div class="col-addr">${cell(address)}</div>

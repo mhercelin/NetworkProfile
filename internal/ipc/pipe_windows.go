@@ -40,8 +40,7 @@ func randomPipeName() (string, error) {
 }
 
 func currentUserSID() (string, error) {
-	token := windows.Token(0) // the current process token
-	user, err := token.GetTokenUser()
+	user, err := windows.GetCurrentProcessToken().GetTokenUser()
 	if err != nil {
 		return "", fmt.Errorf("lecture du compte courant : %w", err)
 	}

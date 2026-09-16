@@ -35,8 +35,17 @@ const state = {
   fatal: '',
 }
 
+// Nearly every network this tool is pointed at is a /24.
+const DEFAULT_MASK = '255.255.255.0'
+
 function blankQuick() {
   return { interface: '', mode: 'dhcp', ssid: '', address: '', mask: '', gateway: '', dns: '' }
+}
+
+// A profile is almost always named after the adapter it drives, so the name
+// starts there and the operator only types what distinguishes it.
+function prefixedName(iface) {
+  return iface ? `${iface} — ` : ''
 }
 
 /* ---------------- rendering ---------------- */
@@ -202,16 +211,34 @@ function draftFromProfile(profile) {
     isNew: false,
     id: profile.id,
     name: profile.name,
+    // An existing name is the operator's own: never rewrite it.
+    nameTouched: true,
     targets: (profile.targets ?? []).map((target) => ({ ...target, dns: [...(target.dns ?? [])] })),
   }
 }
 
 function blankDraft() {
+  const iface = defaultInterface()
   return {
     isNew: true,
     id: '',
-    name: '',
-    targets: [{ interface: defaultInterface(), mode: 'dhcp', ssid: '', address: '', mask: '', gateway: '', dns: [] }],
+    name: prefixedName(iface),
+    nameTouched: false,
+    targets: [blankTarget(iface)],
+  }
+}
+
+// A new profile starts static: switching an adapter to a fixed address is what
+// this tool is for, and DHCP is one click away.
+function blankTarget(iface) {
+  return {
+    interface: iface,
+    mode: 'static',
+    ssid: '',
+    address: '',
+    mask: DEFAULT_MASK,
+    gateway: '',
+    dns: [],
   }
 }
 
@@ -224,9 +251,12 @@ function parseDNS(value) {
 function toProfile(draft) {
   const takenIDs = state.profiles.filter((p) => p.id !== draft.id).map((p) => p.id)
 
+  // A name left at just the adapter prefix keeps the adapter, not the dash.
+  const name = draft.name.replace(/\s*—\s*$/, '').trim()
+
   return {
-    id: draft.id || uniqueSlug(draft.name, takenIDs),
-    name: draft.name.trim(),
+    id: draft.id || uniqueSlug(name, takenIDs),
+    name,
     targets: draft.targets.map((target) => {
       const base = { interface: target.interface, mode: target.mode }
       if (target.ssid) base.ssid = target.ssid
@@ -245,7 +275,7 @@ function toProfile(draft) {
 
 async function saveProfile() {
   const draft = state.editing
-  if (!draft.name.trim()) {
+  if (!draft.name.replace(/\s*—\s*$/, '').trim()) {
     state.formError = 'Le nom du profil est obligatoire.'
     render()
     return
@@ -314,7 +344,13 @@ function quickAsProfile() {
     })
   }
 
-  state.editing = { isNew: true, id: '', name: '', targets: [target] }
+  state.editing = {
+    isNew: true,
+    id: '',
+    name: prefixedName(draft.interface),
+    nameTouched: false,
+    targets: [target],
+  }
   state.formError = ''
   state.view = 'form'
   render()
@@ -386,15 +422,7 @@ root.addEventListener('click', (event) => {
       break
 
     case 'add-target':
-      state.editing.targets.push({
-        interface: defaultInterface(),
-        mode: 'dhcp',
-        ssid: '',
-        address: '',
-        mask: '',
-        gateway: '',
-        dns: [],
-      })
+      state.editing.targets.push(blankTarget(defaultInterface()))
       render()
       break
 
@@ -403,13 +431,17 @@ root.addEventListener('click', (event) => {
       render()
       break
 
-    case 'set-mode':
-      state.editing.targets[Number(index)].mode = mode
+    case 'set-mode': {
+      const target = state.editing.targets[Number(index)]
+      target.mode = mode
+      if (mode === 'static' && !target.mask) target.mask = DEFAULT_MASK
       render()
       break
+    }
 
     case 'quick-mode':
       state.quick.mode = mode
+      if (mode === 'static' && !state.quick.mask) state.quick.mask = DEFAULT_MASK
       render()
       break
 
@@ -442,6 +474,7 @@ root.addEventListener('input', (event) => {
   }
   if (field === 'name') {
     state.editing.name = el.value
+    state.editing.nameTouched = true
     return
   }
 
@@ -478,6 +511,11 @@ root.addEventListener('change', (event) => {
   if (field === 'interface') {
     target.interface = el.value
     target.ssid = ''
+    // The prefix follows the first adapter until the operator types a name of
+    // their own, which is then left alone.
+    if (Number(index) === 0 && !state.editing.nameTouched) {
+      state.editing.name = prefixedName(el.value)
+    }
     render()
     return
   }

@@ -1,6 +1,6 @@
 import { icons } from '../icons.js'
 import { esc } from '../format.js'
-import { interfaceOptions } from '../components.js'
+import { ifaceIcon, interfaceOptions } from '../components.js'
 
 export function renderForm(state) {
   const draft = state.editing
@@ -45,7 +45,10 @@ function targetCard(target, index, state) {
   return `
     <div class="card">
       <div class="card__head">
-        <span class="card__title">Interface ${index + 1}</span>
+        <span class="card__title">
+          ${ifaceIcon(iface?.kind ?? 'ethernet', 14)}
+          ${esc(target.interface || `Interface ${index + 1}`)}
+        </span>
         ${
           state.editing.targets.length > 1
             ? `<button class="btn btn--ghost btn--danger" data-action="remove-target" data-index="${index}" title="Retirer">${icons.trash(14)}</button>`

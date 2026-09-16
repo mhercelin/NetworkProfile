@@ -24,13 +24,27 @@
   --ink-ghost: #b0b7be;
   --ink-disabled: #c3c9d0;
 
+  /* Turquoise means "you can act on this": brand, primary button, focus. */
   --accent: oklch(0.52 0.11 195);
   --accent-deep: oklch(0.44 0.10 195);
   --accent-wash: oklch(0.52 0.11 195 / 0.07);
 
-  --static: oklch(0.46 0.10 70);
-  --static-wash: oklch(0.52 0.11 70 / 0.10);
-  --static-line: oklch(0.52 0.11 70 / 0.30);
+  /* Green means "this is the state right now": live adapter, applied profile. */
+  --live: oklch(0.55 0.13 150);
+  --live-wash: oklch(0.55 0.13 150 / 0.09);
+  --live-line: oklch(0.55 0.13 150 / 0.32);
+
+  /* The three ways an address is obtained, each with its own hue. */
+  --static: oklch(0.50 0.12 70);
+  --static-wash: oklch(0.52 0.12 70 / 0.12);
+  --static-line: oklch(0.52 0.12 70 / 0.32);
+
+  --dhcp: oklch(0.53 0.13 250);
+  --dhcp-wash: oklch(0.53 0.13 250 / 0.10);
+  --dhcp-line: oklch(0.53 0.13 250 / 0.30);
+
+  --wired: oklch(0.55 0.12 250);
+  --wireless: oklch(0.55 0.15 305);
 
   --danger: oklch(0.52 0.16 25);
   --danger-wash: oklch(0.52 0.16 25 / 0.08);
@@ -115,9 +129,10 @@ input, textarea, select { user-select: text; font-family: inherit; }
 .rail__item:hover { background: #e9ecf0; }
 
 .rail__item[aria-current='page'] {
-  background: var(--bg-rail-active);
-  color: var(--ink);
+  background: var(--accent-wash);
+  color: var(--accent-deep);
   font-weight: 500;
+  box-shadow: inset 2px 0 0 var(--accent);
 }
 
 .rail__foot {
@@ -173,8 +188,22 @@ input, textarea, select { user-select: text; font-family: inherit; }
 }
 
 .adapter { display: flex; align-items: center; gap: 9px; font-size: 12px; color: var(--ink-muted); }
-.adapter__dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); display: block; }
-.adapter__dot--off { background: var(--ink-disabled); }
+
+.adapter__dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--live);
+  display: block;
+  box-shadow: 0 0 0 3px var(--live-wash);
+}
+
+.adapter__dot--off { background: var(--ink-disabled); box-shadow: none; }
+
+/* The adapter kind is worth recognising at a glance, before reading the name. */
+.iface-icon { display: inline-flex; }
+.iface-icon--ethernet { color: var(--wired); }
+.iface-icon--wifi { color: var(--wireless); }
 .adapter__addr { font-family: var(--mono); font-size: 12px; color: var(--ink-strong); }
 .adapter__addr--off { color: var(--ink-ghost); }
 .adapter__name--off { color: var(--ink-dim); }
@@ -208,13 +237,13 @@ input, textarea, select { user-select: text; font-family: inherit; }
   border-bottom: 1px solid var(--line-row);
 }
 
-.row:hover { background: #fafbfc; }
+.row:hover { background: #f7f9fa; }
 
 .row--active {
-  background: var(--accent-wash);
-  box-shadow: inset 2px 0 0 var(--accent);
+  background: var(--live-wash);
+  box-shadow: inset 2px 0 0 var(--live);
 }
-.row--active:hover { background: var(--accent-wash); }
+.row--active:hover { background: var(--live-wash); }
 
 .col-name { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
 .col-addr { width: 140px; flex: 0 0 140px; font-family: var(--mono); font-size: 12px; color: var(--ink-strong); }
@@ -229,11 +258,21 @@ input, textarea, select { user-select: text; font-family: inherit; }
 .row:hover .row__tools, .row__tools:focus-within { opacity: 1; }
 .row__tools .btn { height: 26px; padding: 0 6px; }
 
-.row__name { font-size: 13px; font-weight: 500; color: var(--ink); }
-.row__sub { display: flex; align-items: center; gap: 6px; font-size: 11.5px; color: var(--ink-faint); }
+/* Interface-prefixed names get long; wrapping would make every row a different
+   height, so they stay on one line and the full text is in the tooltip. */
+.row__name {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.row__sub { display: flex; align-items: center; gap: 6px; font-size: 11.5px; color: var(--ink-faint); white-space: nowrap; }
 .empty-cell { color: var(--ink-ghost); }
 
-.row__applied { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--accent-deep); font-weight: 500; }
+.row__applied { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--live); font-weight: 500; }
 
 /* ---------- badges ---------- */
 
@@ -246,9 +285,9 @@ input, textarea, select { user-select: text; font-family: inherit; }
   font-size: 10.5px;
   font-weight: 500;
   letter-spacing: 0.3px;
-  background: var(--bg-surface);
-  border: 1px solid var(--line-soft);
-  color: var(--ink-muted);
+  background: var(--dhcp-wash);
+  border: 1px solid var(--dhcp-line);
+  color: var(--dhcp);
 }
 
 .badge--static { background: var(--static-wash); border-color: var(--static-line); color: var(--static); }
@@ -336,7 +375,7 @@ select.field { padding-right: 6px; cursor: pointer; }
 }
 
 .card__head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-.card__title { font-size: 12.5px; font-weight: 600; color: var(--ink); }
+.card__title { display: flex; align-items: center; gap: 7px; font-size: 12.5px; font-weight: 600; color: var(--ink); }
 
 /* align-self keeps the control at its natural width: a .form-row is a column
    flex container, which would otherwise stretch it edge to edge. */
