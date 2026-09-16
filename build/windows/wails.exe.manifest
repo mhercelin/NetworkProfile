@@ -6,13 +6,13 @@
             <assemblyIdentity type="win32" name="Microsoft.Windows.Common-Controls" version="6.0.0.0" processorArchitecture="*" publicKeyToken="6595b64144ccf1df" language="*"/>
         </dependentAssembly>
     </dependency>
-    <!-- Reconfiguring an adapter requires elevation, and every screen of the
-         application ends in that action, so elevation is requested up front
-         rather than in the middle of a change. -->
+    <!-- The interface runs as the operator: it reads adapter state and stores
+         profiles in that account's own profile directory, neither of which
+         needs privileges. Only the helper it spawns is elevated. -->
     <trustInfo xmlns="urn:schemas-microsoft-com:asm.v3">
         <security>
             <requestedPrivileges>
-                <requestedExecutionLevel level="requireAdministrator" uiAccess="false"/>
+                <requestedExecutionLevel level="asInvoker" uiAccess="false"/>
             </requestedPrivileges>
         </security>
     </trustInfo>

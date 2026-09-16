@@ -28,24 +28,25 @@ func New(store *profile.Store, manager network.Manager) *App {
 	}
 }
 
-// DataDir is where everything this application writes lives.
+// DataDir is where this application stores profiles: %AppData%\NetworkProfile.
 //
-// It is deliberately machine-wide rather than per-user. The application always
-// runs elevated, and on a machine where the operator is not a local
-// administrator, elevation switches to a different account entirely — so
-// %AppData% would point at whichever administrator account happened to answer
-// the prompt, and the profiles would appear to vanish from one launch to the
-// next.
-func DataDir() string {
-	programData := os.Getenv("ProgramData")
-	if programData == "" {
-		programData = `C:\ProgramData`
+// Per-user is deliberate — two people sharing a machine are configuring it for
+// different work — and it is only possible because the interface runs as the
+// operator. Elevation is confined to the helper, which stores nothing.
+func DataDir() (string, error) {
+	dir, err := os.UserConfigDir()
+	if err != nil {
+		return "", err
 	}
-	return filepath.Join(programData, "NetworkProfile")
+	return filepath.Join(dir, "NetworkProfile"), nil
 }
 
-func DefaultStorePath() string {
-	return filepath.Join(DataDir(), "profiles.yaml")
+func DefaultStorePath() (string, error) {
+	dir, err := DataDir()
+	if err != nil {
+		return "", err
+	}
+	return filepath.Join(dir, "profiles.yaml"), nil
 }
 
 func (a *App) Interfaces() ([]network.Interface, error) {
