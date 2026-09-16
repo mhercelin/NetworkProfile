@@ -28,13 +28,24 @@ func New(store *profile.Store, manager network.Manager) *App {
 	}
 }
 
-// DefaultStorePath is where profiles live: %AppData%\NetworkProfile.
-func DefaultStorePath() (string, error) {
-	dir, err := os.UserConfigDir()
-	if err != nil {
-		return "", err
+// DataDir is where everything this application writes lives.
+//
+// It is deliberately machine-wide rather than per-user. The application always
+// runs elevated, and on a machine where the operator is not a local
+// administrator, elevation switches to a different account entirely — so
+// %AppData% would point at whichever administrator account happened to answer
+// the prompt, and the profiles would appear to vanish from one launch to the
+// next.
+func DataDir() string {
+	programData := os.Getenv("ProgramData")
+	if programData == "" {
+		programData = `C:\ProgramData`
 	}
-	return filepath.Join(dir, "NetworkProfile", "profiles.yaml"), nil
+	return filepath.Join(programData, "NetworkProfile")
+}
+
+func DefaultStorePath() string {
+	return filepath.Join(DataDir(), "profiles.yaml")
 }
 
 func (a *App) Interfaces() ([]network.Interface, error) {
