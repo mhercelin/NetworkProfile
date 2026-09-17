@@ -1,5 +1,6 @@
 import './style.css'
 import {
+  ActiveProfileID,
   ApplyProfile,
   ApplyTarget,
   DeleteProfile,
@@ -41,6 +42,9 @@ const state = {
   error: '',
   fatal: '',
   elevated: false,
+  // Which profile matches the adapters right now. Decided in Go, so the window
+  // and the notification area menu cannot disagree about it.
+  activeId: '',
 }
 
 // Nearly every network this tool is pointed at is a /24.
@@ -146,9 +150,14 @@ function render() {
 
 async function loadAll() {
   try {
-    const [profiles, interfaces] = await Promise.all([Profiles(), Interfaces()])
+    const [profiles, interfaces, active] = await Promise.all([
+      Profiles(),
+      Interfaces(),
+      ActiveProfileID(),
+    ])
     state.profiles = profiles ?? []
     state.interfaces = interfaces ?? []
+    state.activeId = active ?? ''
     state.fatal = ''
   } catch (err) {
     state.fatal = `Lecture impossible : ${err}`
@@ -212,6 +221,7 @@ async function reloadInterfaces() {
   try {
     state.interfaces = (await Interfaces()) ?? []
     state.elevated = await Elevated()
+    state.activeId = (await ActiveProfileID()) ?? ''
   } catch (err) {
     state.error = `Lecture des cartes réseau : ${err}`
   }
@@ -569,6 +579,7 @@ EventsOn('profiles:changed', async () => {
     state.profiles = (await Profiles()) ?? []
     state.interfaces = (await Interfaces()) ?? []
     state.elevated = await Elevated()
+    state.activeId = (await ActiveProfileID()) ?? ''
   } catch {
     /* nothing to add: the next action reports its own failure */
   }

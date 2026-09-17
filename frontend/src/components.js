@@ -40,27 +40,6 @@ function adapterCell(iface) {
   </div>`
 }
 
-// A profile counts as active when every one of its targets matches what the
-// adapter currently reports. DNS is left out on purpose: Windows reorders and
-// supplements resolvers on its own, which would make the match flicker.
-export function isActive(profile, interfaces) {
-  const targets = profile.targets ?? []
-  if (!targets.length) return false
-
-  return targets.every((target) => {
-    const iface = interfaces.find((candidate) => candidate.name === target.interface)
-    if (!iface) return false
-
-    if (target.mode === 'dhcp') return iface.dhcp
-    return (
-      !iface.dhcp &&
-      iface.address === target.address &&
-      iface.mask === target.mask &&
-      (target.gateway ?? '') === (iface.gateway ?? '')
-    )
-  })
-}
-
 export function interfaceOptions(state, selected, kind) {
   return state.interfaces
     .filter((iface) => (state.showVirtual || !iface.virtual) && (!kind || iface.kind === kind))

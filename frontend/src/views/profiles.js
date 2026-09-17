@@ -1,6 +1,6 @@
 import { icons } from '../icons.js'
 import { cidr, esc } from '../format.js'
-import { adaptersStrip, ifaceIcon, isActive, modeBadge } from '../components.js'
+import { adaptersStrip, ifaceIcon, modeBadge } from '../components.js'
 
 export function renderProfiles(state) {
   const query = state.search.trim().toLowerCase()
@@ -54,7 +54,7 @@ function row(profile, state) {
   const targets = profile.targets ?? []
   const single = targets.length === 1 ? targets[0] : null
   const allDHCP = targets.every((t) => t.mode === 'dhcp')
-  const active = isActive(profile, state.interfaces)
+  const active = profile.id === state.activeId
   const busy = state.applying === profile.id
 
   const address = single && single.mode === 'static' ? cidr(single.address, single.mask) : ''

@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
+	"log"
 	"net"
 	"os"
 	"strconv"
@@ -50,10 +51,18 @@ func currentUserSID() (string, error) {
 	return user.User.Sid.String(), nil
 }
 
-// StartHelper elevates a second copy of this executable and connects to it.
+// HelperLauncher builds the function a Manager calls the first time a change
+// needs privileges. The log path is handed over rather than derived, because
+// the helper runs as another account and would otherwise write its side of a
+// failure somewhere nobody looks.
+func HelperLauncher(logPath string) func() (*Client, error) {
+	return func() (*Client, error) { return startHelper(logPath) }
+}
+
+// startHelper elevates a second copy of this executable and connects to it.
 // This is where the credentials prompt appears — once, and only when a change
 // is actually being applied.
-func StartHelper() (*Client, error) {
+func startHelper(logPath string) (*Client, error) {
 	name, err := randomPipeName()
 	if err != nil {
 		return nil, err
@@ -68,14 +77,23 @@ func StartHelper() (*Client, error) {
 	}
 
 	args := fmt.Sprintf("--helper --pipe %s --owner %s --parent %d", name, sid, os.Getpid())
+	if logPath != "" {
+		args += fmt.Sprintf(" --log %q", logPath)
+	}
+
+	log.Printf("assistant élevé : démarrage, tube %s", name)
 	if err := elevate(exe, args); err != nil {
+		log.Printf("assistant élevé : élévation refusée ou impossible : %v", err)
 		return nil, err
 	}
 
 	conn, err := dialWhenPublished(pipePath(name), time.Now().Add(helperStartTimeout))
 	if err != nil {
+		log.Printf("assistant élevé : connexion impossible : %v", err)
 		return nil, fmt.Errorf("connexion à l'assistant élevé : %w", err)
 	}
+
+	log.Print("assistant élevé : connecté")
 	return NewClient(conn), nil
 }
 
@@ -140,9 +158,12 @@ func ServeHelper(name, ownerSID string, parentPID int, manager network.Manager) 
 
 	listener, err := winio.ListenPipe(pipePath(name), &winio.PipeConfig{SecurityDescriptor: sddl})
 	if err != nil {
+		log.Printf("publication du tube %s impossible : %v", name, err)
 		return fmt.Errorf("publication du tube %s : %w", name, err)
 	}
 	defer func() { _ = listener.Close() }()
+
+	log.Printf("tube %s publié, en attente de l'interface (pid %d)", name, parentPID)
 
 	// Without this an elevated process would outlive the window that spawned it.
 	go exitWithParent(parentPID)
@@ -151,6 +172,7 @@ func ServeHelper(name, ownerSID string, parentPID int, manager network.Manager) 
 	for {
 		conn, err := listener.Accept()
 		if err != nil {
+			log.Printf("connexion refusée : %v", err)
 			return err
 		}
 
@@ -158,7 +180,11 @@ func ServeHelper(name, ownerSID string, parentPID int, manager network.Manager) 
 		_ = conn.Close()
 
 		if errors.Is(err, ErrShutdown) {
+			log.Print("arrêt demandé par l'interface")
 			return nil
+		}
+		if err != nil {
+			log.Printf("connexion interrompue : %v", err)
 		}
 		// Any other end of connection just means the interface dropped it; wait
 		// for it to come back rather than forcing a second credentials prompt.
@@ -181,6 +207,7 @@ type HelperArgs struct {
 	Pipe   string
 	Owner  string
 	Parent int
+	Log    string
 }
 
 // ParseHelperArgs reports whether this process was started as the helper, and
@@ -207,6 +234,11 @@ func ParseHelperArgs(argv []string) (HelperArgs, bool) {
 			if i+1 < len(argv) {
 				i++
 				args.Parent, _ = strconv.Atoi(argv[i])
+			}
+		case "--log":
+			if i+1 < len(argv) {
+				i++
+				args.Log = argv[i]
 			}
 		}
 	}

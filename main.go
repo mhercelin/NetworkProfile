@@ -27,10 +27,7 @@ func main() {
 	// with --helper the elevated half it spawns, and with a command it applies
 	// a profile and leaves.
 	if args, ok := ipc.ParseHelperArgs(os.Args[1:]); ok {
-		if err := ipc.ServeHelper(args.Pipe, args.Owner, args.Parent, network.NewWindows()); err != nil {
-			log.Fatalf("assistant élevé : %v", err)
-		}
-		return
+		os.Exit(runHelper(args))
 	}
 
 	if len(os.Args) > 1 {
@@ -44,20 +41,52 @@ func main() {
 	}
 }
 
+// runHelper is the elevated half. It writes to the same log as the interface,
+// so a failure that crosses the privilege boundary can be read in one place.
+func runHelper(args ipc.HelperArgs) int {
+	if args.Log != "" {
+		closer := startLogging(args.Log, "[assistant]")
+		defer func() { _ = closer.Close() }()
+	}
+
+	log.Printf("démarrage (pid %d)", os.Getpid())
+
+	if err := ipc.ServeHelper(args.Pipe, args.Owner, args.Parent, network.NewWindows()); err != nil {
+		log.Printf("arrêt sur erreur : %v", err)
+		return 1
+	}
+
+	log.Print("arrêt normal")
+	return 0
+}
+
 // applyFromTray applies a pinned profile. The window is usually hidden when
 // this runs, so a failure has to announce itself: otherwise the operator is
 // left believing the network changed when it did not.
 func applyFromTray(ctx context.Context, app *gui.App, id string) {
+	log.Printf("zone de notification : application de %q", id)
+
 	err := app.ApplyProfile(id)
-	if err == nil || ctx == nil {
+	if err == nil {
+		log.Printf("zone de notification : %q appliqué", id)
 		return
 	}
 
-	_, _ = wruntime.MessageDialog(ctx, wruntime.MessageDialogOptions{
+	// Logged as well as shown: a dialog raised from a hidden window is exactly
+	// the kind of thing that can fail to appear, and then the failure would
+	// leave no trace at all.
+	log.Printf("zone de notification : échec de %q : %v", id, err)
+
+	if ctx == nil {
+		return
+	}
+	if _, dialogErr := wruntime.MessageDialog(ctx, wruntime.MessageDialogOptions{
 		Type:    wruntime.ErrorDialog,
 		Title:   "NetworkProfile",
 		Message: err.Error(),
-	})
+	}); dialogErr != nil {
+		log.Printf("zone de notification : impossible d'afficher l'erreur : %v", dialogErr)
+	}
 }
 
 // runCommandLine reports the exit code, or -1 when the arguments turned out not
@@ -71,7 +100,15 @@ func runCommandLine(args []string) int {
 		return 1
 	}
 
-	manager := ipc.NewManager(network.NewWindows(), ipc.StartHelper)
+	journal, err := logPath()
+	if err != nil {
+		log.Print(err)
+		return 1
+	}
+	closer := startLogging(journal, "[commande]")
+	defer func() { _ = closer.Close() }()
+
+	manager := ipc.NewManager(network.NewWindows(), ipc.HelperLauncher(journal))
 	defer func() { _ = manager.Close() }()
 
 	// The same surface the window is bound to, so a profile applied from a
@@ -97,9 +134,18 @@ func runInterface() error {
 		return err
 	}
 
+	journal, err := logPath()
+	if err != nil {
+		return err
+	}
+	trimLog(journal)
+	closer := startLogging(journal, "[ihm]")
+	defer func() { _ = closer.Close() }()
+	log.Printf("démarrage (pid %d)", os.Getpid())
+
 	// Reads are answered in this process; only writes cross into the helper,
 	// which is started the first time one is attempted.
-	manager := ipc.NewManager(network.NewWindows(), ipc.StartHelper)
+	manager := ipc.NewManager(network.NewWindows(), ipc.HelperLauncher(journal))
 	defer func() {
 		// The helper also exits on its own when this process does, so a failure
 		// here leaves nothing behind — but it is worth knowing about.
@@ -119,9 +165,15 @@ func runInterface() error {
 	app = gui.New(profile.NewStore(storePath), manager, func() {
 		profiles, err := app.Profiles()
 		if err != nil {
+			log.Printf("relecture des profils : %v", err)
 			return
 		}
-		icon.SetProfiles(profiles)
+		active, err := app.ActiveProfileID()
+		if err != nil {
+			log.Printf("profil actif : %v", err)
+		}
+
+		icon.SetProfiles(profiles, active)
 		if ctx != nil {
 			wruntime.EventsEmit(ctx, "profiles:changed")
 		}
@@ -140,7 +192,8 @@ func runInterface() error {
 			ctx = c
 
 			if profiles, err := app.Profiles(); err == nil {
-				icon.SetProfiles(profiles)
+				active, _ := app.ActiveProfileID()
+				icon.SetProfiles(profiles, active)
 			}
 
 			go icon.run(

@@ -157,10 +157,29 @@ func (a *App) ApplyProfile(id string) error {
 
 	for _, p := range profiles {
 		if p.ID == id {
-			return a.applier.Apply(p)
+			err := a.applier.Apply(p)
+			// Applied or not, the machine may have moved: both the window and
+			// the notification area menu have to be told so neither keeps
+			// showing the previous profile as the active one.
+			a.notifyChanged()
+			return err
 		}
 	}
 	return fmt.Errorf("profil %q introuvable", id)
+}
+
+// ActiveProfileID reports which stored profile matches what the adapters
+// currently report, or an empty string when none does.
+func (a *App) ActiveProfileID() (string, error) {
+	profiles, err := a.store.Load()
+	if err != nil {
+		return "", err
+	}
+	adapters, err := a.manager.Interfaces()
+	if err != nil {
+		return "", err
+	}
+	return apply.Active(profiles, adapters), nil
 }
 
 // ApplyTarget applies one interface configuration without saving it, which is
@@ -169,5 +188,10 @@ func (a *App) ApplyTarget(target profile.Target) error {
 	if err := target.Validate(); err != nil {
 		return err
 	}
-	return a.applier.ApplyTarget(target)
+
+	err := a.applier.ApplyTarget(target)
+	// A one-off change moves the machine off whatever profile was active, which
+	// the notification area menu has to reflect.
+	a.notifyChanged()
+	return err
 }
