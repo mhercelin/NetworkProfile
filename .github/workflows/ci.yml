@@ -15,9 +15,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # `stable` et non `go-version-file` : la directive `go` de go.mod est un
+      # minimum de langage, pas un choix de chaîne d'outils. La prendre au pied
+      # de la lettre installe une version non corrigée, et govulncheck remonte
+      # alors les failles de la bibliothèque standard elle-même.
       - uses: actions/setup-go@v5
         with:
-          go-version-file: go.mod
+          go-version: stable
           cache: true
 
       - name: Formatage
@@ -65,9 +69,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # `stable` et non `go-version-file` : la directive `go` de go.mod est un
+      # minimum de langage, pas un choix de chaîne d'outils. La prendre au pied
+      # de la lettre installe une version non corrigée, et govulncheck remonte
+      # alors les failles de la bibliothèque standard elle-même.
       - uses: actions/setup-go@v5
         with:
-          go-version-file: go.mod
+          go-version: stable
           cache: true
 
       - uses: actions/setup-node@v4
