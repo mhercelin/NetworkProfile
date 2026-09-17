@@ -41,6 +41,9 @@ export const icons = {
 
   back: (size) => wrap('<path d="M9.8 3.6L5.4 8l4.4 4.4"></path>', size, 'stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"'),
 
+  pin: (size) =>
+    wrap('<path d="M6.1 2.3h3.8l-.5 4.4 2.3 2v1.2H4.3V8.7l2.3-2z"></path><path d="M8 9.9v3.8"></path>', size, 'stroke-linecap="round" stroke-linejoin="round"'),
+
   refresh: (size) =>
     wrap('<path d="M13 8a5 5 0 1 1-1.6-3.7"></path><path d="M13.3 2.6v2.9h-2.9"></path>', size, 'stroke-linecap="round" stroke-linejoin="round"'),
 }

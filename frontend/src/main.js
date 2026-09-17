@@ -8,7 +8,9 @@ import {
   KnownWiFiNetworks,
   Profiles,
   SaveProfile,
+  SetPinned,
 } from '../wailsjs/go/gui/App'
+import { EventsOn } from '../wailsjs/runtime/runtime'
 
 import { icons } from './icons.js'
 import { clockTime, esc, prefixToMask, uniqueSlug } from './format.js'
@@ -303,6 +305,19 @@ async function saveProfile() {
   render()
 }
 
+async function togglePin(id) {
+  const profile = state.profiles.find((p) => p.id === id)
+  if (!profile) return
+
+  try {
+    await SetPinned(id, !profile.pinned)
+    state.profiles = (await Profiles()) ?? []
+  } catch (err) {
+    state.error = String(err)
+  }
+  render()
+}
+
 async function deleteProfile(id) {
   try {
     await DeleteProfile(id)
@@ -425,6 +440,10 @@ root.addEventListener('click', (event) => {
       applyProfile(id)
       break
 
+    case 'toggle-pin':
+      togglePin(id)
+      break
+
     case 'cancel-form':
       state.editing = null
       state.formError = ''
@@ -540,6 +559,20 @@ root.addEventListener('change', (event) => {
     return
   }
   target[field] = field === 'dns' ? parseDNS(el.value) : el.value
+})
+
+// A profile applied from the notification area changes the machine without the
+// window being involved, so the list would otherwise keep showing the previous
+// one as active.
+EventsOn('profiles:changed', async () => {
+  try {
+    state.profiles = (await Profiles()) ?? []
+    state.interfaces = (await Interfaces()) ?? []
+    state.elevated = await Elevated()
+  } catch {
+    /* nothing to add: the next action reports its own failure */
+  }
+  render()
 })
 
 loadAll()

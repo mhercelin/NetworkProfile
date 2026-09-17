@@ -20,7 +20,18 @@ func newApp(t *testing.T) (*App, *network.Fake) {
 		WiFi: map[string][]string{"Wi-Fi": {"ATELIER-5G"}},
 	}
 	store := profile.NewStore(filepath.Join(t.TempDir(), "profiles.yaml"))
-	return New(store, fake), fake
+	return New(store, fake, nil), fake
+}
+
+// newAppCountingChanges reports how many times the change hook fired, which is
+// what keeps the notification area in step with the stored profiles.
+func newAppCountingChanges(t *testing.T, changes *int) *App {
+	t.Helper()
+
+	store := profile.NewStore(filepath.Join(t.TempDir(), "profiles.yaml"))
+	return New(store, &network.Fake{
+		Adapters: []network.Interface{{Name: "Ethernet", Kind: network.KindEthernet}},
+	}, func() { *changes++ })
 }
 
 func sampleProfile() profile.Profile {
@@ -193,6 +204,81 @@ func TestApplyTargetAppliesAValidConfiguration(t *testing.T) {
 	}
 	if len(fake.Calls) != 1 || fake.Calls[0].Op != "dhcp" {
 		t.Fatalf("unexpected calls: %+v", fake.Calls)
+	}
+}
+
+func TestSetPinned(t *testing.T) {
+	app, _ := newApp(t)
+	if err := app.SaveProfile(sampleProfile()); err != nil {
+		t.Fatalf("SaveProfile: %v", err)
+	}
+
+	if err := app.SetPinned("site-client-b", true); err != nil {
+		t.Fatalf("SetPinned: %v", err)
+	}
+
+	profiles, _ := app.Profiles()
+	if len(profiles) != 1 || !profiles[0].Pinned {
+		t.Fatalf("expected the profile to be pinned, got: %+v", profiles)
+	}
+
+	if err := app.SetPinned("site-client-b", false); err != nil {
+		t.Fatalf("SetPinned: %v", err)
+	}
+	profiles, _ = app.Profiles()
+	if profiles[0].Pinned {
+		t.Fatal("expected the profile to be unpinned")
+	}
+}
+
+func TestSetPinnedReportsAnUnknownID(t *testing.T) {
+	app, _ := newApp(t)
+
+	if err := app.SetPinned("jamais-cree", true); err == nil {
+		t.Fatal("expected an error on an unknown id")
+	}
+}
+
+// Anything that writes the profile file has to tell the notification area, or
+// its menu drifts away from what is stored.
+func TestEveryWriteAnnouncesItself(t *testing.T) {
+	changes := 0
+	app := newAppCountingChanges(t, &changes)
+
+	if err := app.SaveProfile(sampleProfile()); err != nil {
+		t.Fatalf("SaveProfile: %v", err)
+	}
+	if changes != 1 {
+		t.Fatalf("saving must announce itself, got %d", changes)
+	}
+
+	if err := app.SetPinned("site-client-b", true); err != nil {
+		t.Fatalf("SetPinned: %v", err)
+	}
+	if changes != 2 {
+		t.Fatalf("pinning must announce itself, got %d", changes)
+	}
+
+	if err := app.DeleteProfile("site-client-b"); err != nil {
+		t.Fatalf("DeleteProfile: %v", err)
+	}
+	if changes != 3 {
+		t.Fatalf("deleting must announce itself, got %d", changes)
+	}
+}
+
+func TestAFailedWriteAnnouncesNothing(t *testing.T) {
+	changes := 0
+	app := newAppCountingChanges(t, &changes)
+
+	invalid := sampleProfile()
+	invalid.Targets[0].Address = "192.168.1.300"
+	if err := app.SaveProfile(invalid); err == nil {
+		t.Fatal("expected the invalid profile to be refused")
+	}
+
+	if changes != 0 {
+		t.Fatalf("a refused write must announce nothing, got %d", changes)
 	}
 }
 

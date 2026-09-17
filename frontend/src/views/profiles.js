@@ -65,7 +65,11 @@ function row(profile, state) {
   return `
     <div class="row${active ? ' row--active' : ''}">
       <div class="col-name">
-        <span class="row__name" title="${esc(profile.name)}">${esc(profile.name)}</span>
+        <span class="row__name" title="${esc(profile.name)}">
+          <span class="row__pin${profile.pinned ? '' : ' row__pin--none'}"
+                title="${profile.pinned ? 'Épinglé dans la zone de notification' : ''}">${icons.pin(12)}</span>
+          ${esc(profile.name)}
+        </span>
         <span class="row__sub">${subtitle(targets, state)}</span>
       </div>
       <div class="col-addr">${cell(address)}</div>
@@ -88,6 +92,8 @@ function actions(profile, active, busy, state) {
 
   return `
     <span class="row__tools">
+      <button class="btn btn--ghost${profile.pinned ? ' is-pinned' : ''}" data-action="toggle-pin" data-id="${esc(profile.id)}"
+              title="${profile.pinned ? 'Retirer de la zone de notification' : 'Épingler dans la zone de notification'}">${icons.pin(14)}</button>
       <button class="btn btn--ghost" data-action="edit-profile" data-id="${esc(profile.id)}" title="Modifier">${icons.pencil(14)}</button>
       <button class="btn btn--ghost btn--danger" data-action="delete-profile" data-id="${esc(profile.id)}" title="Supprimer">${icons.trash(14)}</button>
     </span>

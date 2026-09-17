@@ -263,6 +263,9 @@ input, textarea, select { user-select: text; font-family: inherit; }
 /* Interface-prefixed names get long; wrapping would make every row a different
    height, so they stay on one line and the full text is in the tooltip. */
 .row__name {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   font-size: 13px;
   font-weight: 500;
   color: var(--ink);
@@ -270,6 +273,13 @@ input, textarea, select { user-select: text; font-family: inherit; }
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
+/* A pinned profile says so next to its name, so the set in the notification
+   area is visible without hovering every row. The space is reserved either way,
+   or the names of unpinned rows would start further left than the others. */
+.row__pin { display: inline-flex; flex: 0 0 auto; color: var(--accent); }
+.row__pin--none { visibility: hidden; }
+.row__tools .btn.is-pinned { color: var(--accent); }
 
 .row__sub { display: flex; align-items: center; gap: 6px; font-size: 11.5px; color: var(--ink-faint); white-space: nowrap; }
 .empty-cell { color: var(--ink-ghost); }

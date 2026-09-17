@@ -31,8 +31,11 @@ type Target struct {
 
 // Profile is a named set of targets applied together.
 type Profile struct {
-	ID      string   `yaml:"id" json:"id"`
-	Name    string   `yaml:"name" json:"name"`
+	ID   string `yaml:"id" json:"id"`
+	Name string `yaml:"name" json:"name"`
+	// Pinned profiles are offered directly in the notification area, so a site
+	// can be switched to without opening the window at all.
+	Pinned  bool     `yaml:"pinned,omitempty" json:"pinned,omitempty"`
 	Targets []Target `yaml:"targets" json:"targets"`
 }
 

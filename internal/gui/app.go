@@ -18,13 +18,26 @@ type App struct {
 	store   *profile.Store
 	manager network.Manager
 	applier *apply.Service
+
+	// changed is how the notification area learns that the pinned set moved,
+	// rather than polling the file for it. It is a constructor argument rather
+	// than a setter because every exported method here is bound to the
+	// frontend, and a callback is not something that survives that crossing.
+	changed func()
 }
 
-func New(store *profile.Store, manager network.Manager) *App {
+func New(store *profile.Store, manager network.Manager, changed func()) *App {
 	return &App{
 		store:   store,
 		manager: manager,
 		applier: apply.New(manager),
+		changed: changed,
+	}
+}
+
+func (a *App) notifyChanged() {
+	if a.changed != nil {
+		a.changed()
 	}
 }
 
@@ -91,7 +104,11 @@ func (a *App) SaveProfile(p profile.Profile) error {
 		profiles = append(profiles, p)
 	}
 
-	return a.store.Save(profiles)
+	if err := a.store.Save(profiles); err != nil {
+		return err
+	}
+	a.notifyChanged()
+	return nil
 }
 
 func (a *App) DeleteProfile(id string) error {
@@ -102,7 +119,31 @@ func (a *App) DeleteProfile(id string) error {
 
 	for i, p := range profiles {
 		if p.ID == id {
-			return a.store.Save(slices.Delete(profiles, i, i+1))
+			if err := a.store.Save(slices.Delete(profiles, i, i+1)); err != nil {
+				return err
+			}
+			a.notifyChanged()
+			return nil
+		}
+	}
+	return fmt.Errorf("profil %q introuvable", id)
+}
+
+// SetPinned adds or removes a profile from the notification area menu.
+func (a *App) SetPinned(id string, pinned bool) error {
+	profiles, err := a.store.Load()
+	if err != nil {
+		return err
+	}
+
+	for i := range profiles {
+		if profiles[i].ID == id {
+			profiles[i].Pinned = pinned
+			if err := a.store.Save(profiles); err != nil {
+				return err
+			}
+			a.notifyChanged()
+			return nil
 		}
 	}
 	return fmt.Errorf("profil %q introuvable", id)

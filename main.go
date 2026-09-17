@@ -44,6 +44,22 @@ func main() {
 	}
 }
 
+// applyFromTray applies a pinned profile. The window is usually hidden when
+// this runs, so a failure has to announce itself: otherwise the operator is
+// left believing the network changed when it did not.
+func applyFromTray(ctx context.Context, app *gui.App, id string) {
+	err := app.ApplyProfile(id)
+	if err == nil || ctx == nil {
+		return
+	}
+
+	_, _ = wruntime.MessageDialog(ctx, wruntime.MessageDialogOptions{
+		Type:    wruntime.ErrorDialog,
+		Title:   "NetworkProfile",
+		Message: err.Error(),
+	})
+}
+
 // runCommandLine reports the exit code, or -1 when the arguments turned out not
 // to be a command after all and the window should open.
 func runCommandLine(args []string) int {
@@ -59,8 +75,9 @@ func runCommandLine(args []string) int {
 	defer func() { _ = manager.Close() }()
 
 	// The same surface the window is bound to, so a profile applied from a
-	// shortcut goes through exactly the path a click goes through.
-	app := gui.New(profile.NewStore(storePath), manager)
+	// shortcut goes through exactly the path a click goes through. Nothing
+	// watches for changes here: the process ends with the command.
+	app := gui.New(profile.NewStore(storePath), manager, nil)
 
 	handled, code := cli.Run(args, cli.Env{
 		Profiles: app.Profiles,
@@ -91,9 +108,24 @@ func runInterface() error {
 		}
 	}()
 
-	app := gui.New(profile.NewStore(storePath), manager)
+	var (
+		ctx  context.Context
+		app  *gui.App
+		icon = newTray(func(id string) { applyFromTray(ctx, app, id) })
+	)
 
-	var ctx context.Context
+	// The menu follows the stored profiles instead of polling them, and the
+	// window is told so its list stops showing the old active profile.
+	app = gui.New(profile.NewStore(storePath), manager, func() {
+		profiles, err := app.Profiles()
+		if err != nil {
+			return
+		}
+		icon.SetProfiles(profiles)
+		if ctx != nil {
+			wruntime.EventsEmit(ctx, "profiles:changed")
+		}
+	})
 
 	return wails.Run(&options.App{
 		Title:            "NetworkProfile",
@@ -106,7 +138,12 @@ func runInterface() error {
 		Bind:             []any{app},
 		OnStartup: func(c context.Context) {
 			ctx = c
-			go startTray(
+
+			if profiles, err := app.Profiles(); err == nil {
+				icon.SetProfiles(profiles)
+			}
+
+			go icon.run(
 				func() {
 					wruntime.WindowUnminimise(c)
 					wruntime.WindowShow(c)

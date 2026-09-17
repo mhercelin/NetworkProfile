@@ -23,14 +23,27 @@ go test -tags integration ./internal/network -run TestRealAdapters -v
 ## Architecture, and why
 
 ```
-main.go            interface, or the elevated helper when given --helper
+main.go            interface, elevated helper (--helper), or a command
+tray.go            notification area icon and the pinned-profile menu
+console_windows.go attaches stdout when a command is run from a terminal
 internal/gui       the surface bound to the frontend, one method per action
+internal/cli       --list and --profile, tested without touching a machine
 internal/profile   model, validation, YAML store
 internal/apply     turns a profile into adapter writes
 internal/ipc       named-pipe protocol, client, server, helper spawning
 internal/network   Manager interface, Windows implementation, Fake
 frontend/src       vanilla JS, no framework
+tools/icongen      draws build/windows/icon.ico and build/appicon.png
 ```
+
+**Every exported method on `gui.App` is bound to the frontend**, so anything
+that cannot cross that boundary — a callback, for instance — is a constructor
+argument instead. That is why `New` takes the change hook rather than offering
+a setter.
+
+The notification area menu follows the stored profiles through that hook; it is
+never polled. Its slots are created once and then renamed or hidden, because
+Windows offers no way to remove a menu item once added.
 
 **Privileges are split, and this is load-bearing.** The target user is not a
 local administrator, so elevation switches to a *different Windows account*.

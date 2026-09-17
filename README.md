@@ -26,6 +26,9 @@ par jour, sur une machine dont on n'est pas administrateur.
 - **Profil actif signalé** : la ligne dont la configuration correspond à l'état
   réel des cartes est mise en évidence.
 - **Reste en zone de notification**, pour ne demander les droits qu'une fois.
+- **Profils épinglés** : les profils marqués d'une épingle apparaissent
+  directement dans le menu de l'icône, donc un changement de site se fait en
+  deux clics sans ouvrir la fenêtre.
 
 ## Le modèle de privilèges
 
