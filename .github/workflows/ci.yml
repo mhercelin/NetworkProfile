@@ -79,8 +79,10 @@ jobs:
       - name: Installer la CLI Wails
         run: go install github.com/wailsapp/wails/v2/cmd/wails@v2.15.0
 
+      # Surtout pas -skipbindings : les liaisons JS sont générées et donc
+      # absentes du dépôt, et le frontend ne compile pas sans elles.
       - name: Compiler
-        run: wails build -clean -skipbindings
+        run: wails build -clean
 
       - uses: actions/upload-artifact@v4
         with:
