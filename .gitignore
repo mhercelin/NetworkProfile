@@ -17,3 +17,6 @@
 
 # Empreinte de cache ecrite par wails
 /frontend/package.json.md5
+
+# Reglages Claude Code propres au poste
+/.claude/settings.local.json
