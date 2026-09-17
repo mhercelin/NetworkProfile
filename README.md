@@ -141,4 +141,4 @@ go test -tags integration ./internal/network -run TestRealAdapters -v
 
 ## Licence
 
-À définir.
+[MIT](LICENSE).
