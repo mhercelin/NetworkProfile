@@ -199,17 +199,37 @@ func writeICO(path string, sizes []int) error {
 	return os.WriteFile(path, out.Bytes(), 0o644)
 }
 
+// writePNG produces build/appicon.png, the source icon Wails reads for the
+// window and for platforms other than Windows. Leaving it behind means the
+// framework's own logo keeps showing up in places the .ico never covers.
+func writePNG(path string, size int) error {
+	file, err := os.Create(path)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	return png.Encode(file, draw(size))
+}
+
 func main() {
 	sizes := []int{16, 20, 24, 32, 40, 48, 64, 128, 256}
-	path := filepath.Join("build", "windows", "icon.ico")
 
-	if err := writeICO(path, sizes); err != nil {
+	ico := filepath.Join("build", "windows", "icon.ico")
+	if err := writeICO(ico, sizes); err != nil {
 		log.Fatal(err)
 	}
 
-	info, err := os.Stat(path)
-	if err != nil {
+	appIcon := filepath.Join("build", "appicon.png")
+	if err := writePNG(appIcon, 512); err != nil {
 		log.Fatal(err)
 	}
-	log.Printf("%s écrit : %d tailles, %d octets", path, len(sizes), info.Size())
+
+	for _, path := range []string{ico, appIcon} {
+		info, err := os.Stat(path)
+		if err != nil {
+			log.Fatal(err)
+		}
+		log.Printf("%s écrit : %d octets", path, info.Size())
+	}
 }
