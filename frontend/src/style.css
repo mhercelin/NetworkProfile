@@ -400,7 +400,25 @@ select.field { padding-right: 6px; cursor: pointer; }
   white-space: pre-wrap;
 }
 
-.notice--ok { border-color: var(--static-line); background: var(--static-wash); color: var(--static); }
+.notice--ok { border-color: var(--live-line); background: var(--live-wash); color: var(--live); }
+
+/* A failed action is reported above the list, which stays usable: replacing the
+   whole screen with the message left nothing to click. */
+.banner {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 9px 20px;
+  border-bottom: 1px solid var(--danger-line);
+  background: var(--danger-wash);
+  color: var(--danger);
+  font-size: 12px;
+}
+
+.banner__text { min-width: 0; overflow-wrap: anywhere; }
+.banner .btn { color: var(--danger); }
 
 .empty {
   padding: 56px 20px;

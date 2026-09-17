@@ -5,7 +5,62 @@ package ipc
 import (
 	"strings"
 	"testing"
+	"time"
+
+	"github.com/Microsoft/go-winio"
 )
+
+// The helper only publishes its pipe once the operator has answered the
+// elevation prompt and the process has started, so the first attempts always
+// find nothing. winio.DialPipe does not wait for that on its own.
+func TestDialWhenPublishedWaitsForALateHelper(t *testing.T) {
+	name, err := randomPipeName()
+	if err != nil {
+		t.Fatal(err)
+	}
+	path := pipePath(name)
+
+	listening := make(chan struct{})
+	go func() {
+		time.Sleep(400 * time.Millisecond)
+		listener, err := winio.ListenPipe(path, nil)
+		if err != nil {
+			close(listening)
+			return
+		}
+		defer listener.Close()
+		close(listening)
+
+		conn, err := listener.Accept()
+		if err == nil {
+			conn.Close()
+		}
+	}()
+
+	conn, err := dialWhenPublished(path, time.Now().Add(10*time.Second))
+	if err != nil {
+		t.Fatalf("expected the late pipe to be picked up, got: %v", err)
+	}
+	conn.Close()
+	<-listening
+}
+
+func TestDialWhenPublishedGivesUpOnTheDeadline(t *testing.T) {
+	name, err := randomPipeName()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	start := time.Now()
+	_, err = dialWhenPublished(pipePath(name), start.Add(300*time.Millisecond))
+
+	if err == nil {
+		t.Fatal("expected a pipe nobody ever creates to fail")
+	}
+	if elapsed := time.Since(start); elapsed > 5*time.Second {
+		t.Fatalf("gave up after %s, far past its deadline", elapsed)
+	}
+}
 
 // The helper's pipe is locked to this SID, so getting it wrong locks the
 // interface out of its own helper — which is exactly what happened when the

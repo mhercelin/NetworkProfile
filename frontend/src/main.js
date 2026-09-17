@@ -32,6 +32,10 @@ const state = {
   quickDone: '',
   applying: '',
   lastApplied: null,
+  // error is a failed action: it is shown above the list, which stays usable.
+  // fatal is only for not being able to read anything at all at startup, where
+  // there is genuinely nothing to show.
+  error: '',
   fatal: '',
 }
 
@@ -187,9 +191,9 @@ async function applyProfile(id) {
       at: clockTime(),
       ms: Math.round(performance.now() - started),
     }
-    state.fatal = ''
+    state.error = ''
   } catch (err) {
-    state.fatal = `${profile?.name ?? id} : ${err}`
+    state.error = `${profile?.name ?? id} : ${err}`
   } finally {
     state.applying = ''
   }
@@ -201,7 +205,7 @@ async function reloadInterfaces() {
   try {
     state.interfaces = (await Interfaces()) ?? []
   } catch (err) {
-    state.fatal = `Lecture des cartes réseau : ${err}`
+    state.error = `Lecture des cartes réseau : ${err}`
   }
   render()
 }
@@ -299,7 +303,7 @@ async function deleteProfile(id) {
     state.profiles = (await Profiles()) ?? []
     state.confirmDelete = ''
   } catch (err) {
-    state.fatal = String(err)
+    state.error = String(err)
   }
   render()
 }
@@ -372,6 +376,11 @@ root.addEventListener('click', (event) => {
 
     case 'toggle-virtual':
       state.showVirtual = trigger.checked
+      render()
+      break
+
+    case 'dismiss-error':
+      state.error = ''
       render()
       break
 

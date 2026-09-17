@@ -23,6 +23,15 @@ export function renderProfiles(state) {
 
     ${adaptersStrip(state)}
 
+    ${
+      state.error
+        ? `<div class="banner">
+             <span class="banner__text">${esc(state.error)}</span>
+             <button class="btn btn--ghost btn--sm" data-action="dismiss-error">Fermer</button>
+           </div>`
+        : ''
+    }
+
     <div class="thead">
       <div class="col-name">PROFIL</div>
       <div class="col-addr">ADRESSE</div>

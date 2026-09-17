@@ -7,6 +7,8 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"io/fs"
+	"net"
 	"os"
 	"strconv"
 	"time"
@@ -17,9 +19,10 @@ import (
 	"networkprofile/internal/network"
 )
 
-// The operator has to type administrator credentials into the elevation
-// prompt before the helper even starts, so the wait is generous.
-const dialTimeout = 120 * time.Second
+// How long to wait for the helper to publish its pipe. The elevation prompt
+// itself is already answered by the time this starts counting, since
+// ShellExecute blocks until the operator has dealt with it.
+const helperStartTimeout = 30 * time.Second
 
 // ErrElevationRefused reports that the elevation prompt was dismissed. It is
 // an ordinary outcome, not a failure to diagnose.
@@ -69,12 +72,39 @@ func StartHelper() (*Client, error) {
 		return nil, err
 	}
 
-	timeout := dialTimeout
-	conn, err := winio.DialPipe(pipePath(name), &timeout)
+	conn, err := dialWhenPublished(pipePath(name), time.Now().Add(helperStartTimeout))
 	if err != nil {
 		return nil, fmt.Errorf("connexion à l'assistant élevé : %w", err)
 	}
 	return NewClient(conn), nil
+}
+
+// dialWhenPublished waits for the helper to create its pipe.
+//
+// winio.DialPipe's own timeout only covers a pipe that exists but has no free
+// instance: when the pipe is simply not there yet it fails on the spot. The
+// helper is a process that has just been launched through an elevation prompt,
+// so "not there yet" is the normal first answer, and the waiting has to happen
+// here.
+func dialWhenPublished(path string, deadline time.Time) (net.Conn, error) {
+	const attempt = 200 * time.Millisecond
+
+	for {
+		timeout := attempt
+		conn, err := winio.DialPipe(path, &timeout)
+		if err == nil {
+			return conn, nil
+		}
+		// Anything other than "not created yet" is a real failure — a refused
+		// connection must not be retried for half a minute.
+		if !errors.Is(err, fs.ErrNotExist) {
+			return nil, err
+		}
+		if time.Now().After(deadline) {
+			return nil, fmt.Errorf("l'assistant élevé n'a pas répondu en %s", helperStartTimeout)
+		}
+		time.Sleep(150 * time.Millisecond)
+	}
 }
 
 func elevate(exe, args string) error {
