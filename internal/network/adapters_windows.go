@@ -55,11 +55,13 @@ func adapters() ([]Interface, error) {
 			DHCP:        row.Flags&flagDHCPEnabled != 0,
 		}
 
-		if unicast := row.FirstUnicastAddress; unicast != nil {
-			if ip := unicast.Address.IP(); ip != nil {
-				iface.Address = ip.String()
-				iface.Mask = maskFromPrefixLen(int(unicast.OnLinkPrefixLength))
+		for unicast := row.FirstUnicastAddress; unicast != nil; unicast = unicast.Next {
+			if !usableIPv4(unicast.Address.IP()) {
+				continue
 			}
+			iface.Address = unicast.Address.IP().String()
+			iface.Mask = maskFromPrefixLen(int(unicast.OnLinkPrefixLength))
+			break
 		}
 		if gateway := row.FirstGatewayAddress; gateway != nil {
 			if ip := gateway.Address.IP(); ip != nil {
@@ -119,7 +121,7 @@ func physicalAdapterIDs() (map[string]bool, bool) {
 	if err != nil {
 		return nil, false
 	}
-	defer class.Close()
+	defer func() { _ = class.Close() }()
 
 	names, err := class.ReadSubKeyNames(-1)
 	if err != nil {
@@ -133,7 +135,7 @@ func physicalAdapterIDs() (map[string]bool, bool) {
 		}
 		id, _, idErr := sub.GetStringValue("NetCfgInstanceId")
 		characteristics, _, charErr := sub.GetIntegerValue("Characteristics")
-		sub.Close()
+		_ = sub.Close()
 
 		if idErr == nil && charErr == nil && characteristics&ncfPhysical != 0 {
 			ids[strings.ToLower(id)] = true

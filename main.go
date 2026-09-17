@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 
+	"networkprofile/internal/cli"
 	"networkprofile/internal/gui"
 	"networkprofile/internal/ipc"
 	"networkprofile/internal/network"
@@ -22,8 +23,9 @@ import (
 var assets embed.FS
 
 func main() {
-	// The same executable is both halves: started plainly it is the interface,
-	// started with --helper it is the elevated half the interface spawned.
+	// The same executable is all three: started plainly it is the interface,
+	// with --helper the elevated half it spawns, and with a command it applies
+	// a profile and leaves.
 	if args, ok := ipc.ParseHelperArgs(os.Args[1:]); ok {
 		if err := ipc.ServeHelper(args.Pipe, args.Owner, args.Parent, network.NewWindows()); err != nil {
 			log.Fatalf("assistant élevé : %v", err)
@@ -31,9 +33,45 @@ func main() {
 		return
 	}
 
+	if len(os.Args) > 1 {
+		if code := runCommandLine(os.Args[1:]); code >= 0 {
+			os.Exit(code)
+		}
+	}
+
 	if err := runInterface(); err != nil {
 		log.Fatal(err)
 	}
+}
+
+// runCommandLine reports the exit code, or -1 when the arguments turned out not
+// to be a command after all and the window should open.
+func runCommandLine(args []string) int {
+	attachConsole()
+
+	storePath, err := gui.DefaultStorePath()
+	if err != nil {
+		log.Print(err)
+		return 1
+	}
+
+	manager := ipc.NewManager(network.NewWindows(), ipc.StartHelper)
+	defer func() { _ = manager.Close() }()
+
+	// The same surface the window is bound to, so a profile applied from a
+	// shortcut goes through exactly the path a click goes through.
+	app := gui.New(profile.NewStore(storePath), manager)
+
+	handled, code := cli.Run(args, cli.Env{
+		Profiles: app.Profiles,
+		Apply:    app.ApplyProfile,
+		Out:      os.Stdout,
+		Err:      os.Stderr,
+	})
+	if !handled {
+		return -1
+	}
+	return code
 }
 
 func runInterface() error {
@@ -45,7 +83,13 @@ func runInterface() error {
 	// Reads are answered in this process; only writes cross into the helper,
 	// which is started the first time one is attempted.
 	manager := ipc.NewManager(network.NewWindows(), ipc.StartHelper)
-	defer manager.Close()
+	defer func() {
+		// The helper also exits on its own when this process does, so a failure
+		// here leaves nothing behind — but it is worth knowing about.
+		if err := manager.Close(); err != nil {
+			log.Printf("arrêt de l'assistant élevé : %v", err)
+		}
+	}()
 
 	app := gui.New(profile.NewStore(storePath), manager)
 

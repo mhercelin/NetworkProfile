@@ -63,6 +63,27 @@ Conséquences pratiques :
   nommant que votre compte, SYSTEM et les administrateurs : aucun autre
   utilisateur du poste ne peut lui parler.
 
+## En ligne de commande
+
+Pour qu'un site ait son propre raccourci sur le bureau, sans passer par la
+fenêtre :
+
+```bat
+NetworkProfile.exe --profile "Ethernet — Atelier"
+NetworkProfile.exe --list
+```
+
+Le nom accepte l'identifiant du profil ou son nom affiché, sans tenir compte de
+la casse ; un nom ambigu est refusé plutôt que tranché au hasard. Le code de
+retour vaut 0 en cas de succès, ce qui permet d'enchaîner dans un script.
+
+Deux conséquences du fait que l'exécutable est une application graphique :
+l'invite de commande **rend la main immédiatement** et l'affichage arrive
+ensuite — rediriger la sortie (`NetworkProfile.exe --list > profils.txt`) donne
+un résultat propre. Et chaque exécution est un processus isolé, donc appliquer
+un profil depuis un raccourci demande les droits administrateur à chaque fois,
+là où la fenêtre ouverte ne les demande qu'une fois.
+
 ## Format des profils
 
 `%AppData%\NetworkProfile\profiles.yaml`, lisible et modifiable à la main :

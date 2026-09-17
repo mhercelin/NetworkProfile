@@ -80,7 +80,8 @@ func (s *Store) Save(profiles []Profile) error {
 	defer os.Remove(tmpName)
 
 	if _, err := tmp.Write(out); err != nil {
-		tmp.Close()
+		// Already failing; the close can add nothing to the diagnosis.
+		_ = tmp.Close()
 		return err
 	}
 	if err := tmp.Close(); err != nil {

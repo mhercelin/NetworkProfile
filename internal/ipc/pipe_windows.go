@@ -142,7 +142,7 @@ func ServeHelper(name, ownerSID string, parentPID int, manager network.Manager) 
 	if err != nil {
 		return fmt.Errorf("publication du tube %s : %w", name, err)
 	}
-	defer listener.Close()
+	defer func() { _ = listener.Close() }()
 
 	// Without this an elevated process would outlive the window that spawned it.
 	go exitWithParent(parentPID)
@@ -155,7 +155,7 @@ func ServeHelper(name, ownerSID string, parentPID int, manager network.Manager) 
 		}
 
 		err = server.Serve(conn)
-		conn.Close()
+		_ = conn.Close()
 
 		if errors.Is(err, ErrShutdown) {
 			return nil

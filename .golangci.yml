@@ -1,0 +1,34 @@
+version: "2"
+
+linters:
+  enable:
+    - errcheck # un retour d'erreur ignoré, c'est une panne silencieuse
+    - govet
+    - ineffassign
+    - staticcheck
+    - unused
+
+  settings:
+    errcheck:
+      # Écrire sur la console, nettoyer un temporaire dans un chemin d'erreur ou
+      # rendre un handle : aucun de ces appels n'a quoi que ce soit à apprendre
+      # à l'appelant. Les exclure garde le linter crédible — s'il ne remonte que
+      # des cas corrects, on prend l'habitude de ne plus le lire.
+      exclude-functions:
+        - fmt.Fprint
+        - fmt.Fprintf
+        - fmt.Fprintln
+        - os.Remove
+        - golang.org/x/sys/windows.CloseHandle
+
+  exclusions:
+    rules:
+      # Dans un test, une fermeture qui échoue ne change ni le verdict ni ce
+      # qu'on peut en faire. Ailleurs, chaque cas est traité explicitement.
+      - path: _test\.go
+        linters:
+          - errcheck
+
+formatters:
+  enable:
+    - gofmt
