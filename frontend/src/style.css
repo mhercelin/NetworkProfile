@@ -148,8 +148,10 @@ input, textarea, select { user-select: text; font-family: inherit; }
   align-items: center;
   gap: 7px;
   font-size: 11px;
-  color: var(--accent);
+  color: var(--live);
 }
+
+.rail__elevated--idle { color: var(--ink-dim); }
 
 .rail__version { font-size: 11px; color: var(--ink-dim); font-family: var(--mono); }
 

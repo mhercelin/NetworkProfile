@@ -3,6 +3,7 @@ import {
   ApplyProfile,
   ApplyTarget,
   DeleteProfile,
+  Elevated,
   Interfaces,
   KnownWiFiNetworks,
   Profiles,
@@ -37,6 +38,7 @@ const state = {
   // there is genuinely nothing to show.
   error: '',
   fatal: '',
+  elevated: false,
 }
 
 // Nearly every network this tool is pointed at is a /24.
@@ -81,7 +83,10 @@ function rail() {
           <input type="checkbox" data-action="toggle-virtual" ${state.showVirtual ? 'checked' : ''}>
           Cartes virtuelles
         </label>
-        <div class="rail__elevated">${icons.shield(13)} Mode administrateur</div>
+        <div class="rail__elevated${state.elevated ? '' : ' rail__elevated--idle'}"
+             title="${state.elevated ? "L'assistant élevé tourne : les changements suivants ne redemanderont rien." : 'Les droits seront demandés au premier changement.'}">
+          ${icons.shield(13)} ${state.elevated ? 'Droits administrateur actifs' : 'Droits non demandés'}
+        </div>
         <div class="rail__version">v0.1.0</div>
       </div>
     </aside>`
@@ -204,6 +209,7 @@ async function applyProfile(id) {
 async function reloadInterfaces() {
   try {
     state.interfaces = (await Interfaces()) ?? []
+    state.elevated = await Elevated()
   } catch (err) {
     state.error = `Lecture des cartes réseau : ${err}`
   }

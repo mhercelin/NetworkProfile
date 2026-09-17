@@ -143,6 +143,15 @@ func (m *Manager) helper() (*Client, error) {
 	return client, nil
 }
 
+// Elevated reports whether the privileged helper is running. Until the first
+// change is applied, no privileges have been asked for at all — and saying
+// otherwise in the interface would be a plain lie.
+func (m *Manager) Elevated() bool {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	return m.client != nil
+}
+
 // Close stops the helper if one was ever started.
 func (m *Manager) Close() error {
 	m.mu.Lock()

@@ -53,6 +53,13 @@ func (a *App) Interfaces() ([]network.Interface, error) {
 	return a.manager.Interfaces()
 }
 
+// Elevated reports whether privileges have actually been obtained. Managers
+// that need none — the one used in tests — never claim otherwise.
+func (a *App) Elevated() bool {
+	reporter, ok := a.manager.(interface{ Elevated() bool })
+	return ok && reporter.Elevated()
+}
+
 func (a *App) KnownWiFiNetworks(iface string) ([]string, error) {
 	return a.manager.KnownWiFiNetworks(iface)
 }
