@@ -55,8 +55,9 @@ jobs:
       - name: Build
         run: wails build -clean
 
-      # Signing slots in here, between the build and the checksums: SignPath
-      # signs remotely, so no certificate ever reaches the runner.
+      # Should this project ever get a certificate, signing slots in here:
+      # between the build and the checksums, so the published hashes describe
+      # the signed file rather than the one before it.
 
       - name: Compute checksums
         shell: pwsh
@@ -94,14 +95,20 @@ jobs:
             only once for as long as it stays open — closing the window leaves
             it in the notification area.
 
-            ## Code signing policy
+            ## This binary is not signed
 
-            Free code signing provided by [SignPath.io](https://signpath.io),
-            certificate by [SignPath Foundation](https://signpath.org).
+            There is no code signing certificate behind this project, so
+            Windows will warn that the publisher is unknown. Check the file
+            against `checksums.txt`, or build it yourself from source — a
+            binary you compiled locally raises no warning at all.
 
-            Roles and privacy statement:
-            [CODE-SIGNING-POLICY.md](https://github.com/mhercelin/NetworkProfile/blob/main/CODE-SIGNING-POLICY.md).
+            To run the downloaded file anyway: *More info* → *Run anyway*, or
+            `Unblock-File .\NetworkProfile.exe`.
+
+            ## Privacy
 
             This program will not transfer any information to other networked
             systems unless specifically requested by the user or the person
-            installing or operating it.
+            installing or operating it. No telemetry, no update check, no
+            third-party service.
+            [Full statement](https://github.com/mhercelin/NetworkProfile/blob/main/PRIVACY.md).

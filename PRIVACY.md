@@ -1,18 +1,4 @@
-# Code signing policy
-
-Free code signing provided by [SignPath.io](https://signpath.io), certificate by
-[SignPath Foundation](https://signpath.org).
-
-## Team roles
-
-- **Committers and reviewers:** [Maxime HERCELIN](https://github.com/mhercelin)
-- **Approvers:** [Maxime HERCELIN](https://github.com/mhercelin)
-
-This is a single-maintainer project. Every change is committed, reviewed and
-approved by the same person, and the source of every signed build is the public
-history of this repository.
-
-## Privacy
+# Privacy
 
 This program will not transfer any information to other networked systems
 unless specifically requested by the user or the person installing or operating

@@ -165,18 +165,33 @@ never run on their own:
 go test -tags integration ./internal/network -run TestRealAdapters -v
 ```
 
-## Code signing policy
+## Released binaries are not signed
 
-Released binaries are signed. Free code signing provided by
-[SignPath.io](https://signpath.io), certificate by
-[SignPath Foundation](https://signpath.org).
+There is no code signing certificate behind this project, so a binary
+downloaded from the releases page carries no publisher identity. Windows
+attaches a mark to anything downloaded from the internet, and SmartScreen will
+warn about it: *Windows protected your PC*, publisher unknown.
 
-Roles and the full privacy statement:
-[CODE-SIGNING-POLICY.md](CODE-SIGNING-POLICY.md).
+What you can do about it:
 
-In short: this program will not transfer any information to other networked
-systems unless specifically requested by the user or the person installing or
-operating it. No telemetry, no update check, no third-party service.
+- **Check the file** against `checksums.txt` published alongside it:
+  `Get-FileHash NetworkProfile.exe -Algorithm SHA256`.
+- **Or build it yourself** from this repository — see *Building* above. A binary
+  you compiled locally carries no such mark and raises no warning at all.
+
+To run the downloaded file anyway: *More info* → *Run anyway*, or clear the mark
+with `Unblock-File .\NetworkProfile.exe`.
+
+A free certificate was applied for through the
+[SignPath Foundation](https://signpath.org) and declined: their programme
+favours projects with an established community, which this one does not have.
+
+## Privacy
+
+This program will not transfer any information to other networked systems
+unless specifically requested by the user or the person installing or operating
+it. No telemetry, no update check, no third-party service. Full statement:
+[PRIVACY.md](PRIVACY.md).
 
 ## Licence
 
