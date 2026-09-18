@@ -163,6 +163,20 @@ compilation et ne partent jamais tout seuls :
 go test -tags integration ./internal/network -run TestRealAdapters -v
 ```
 
+## Code signing policy
+
+Les binaires publiés sont signés. Free code signing provided by
+[SignPath.io](https://signpath.io), certificate by
+[SignPath Foundation](https://signpath.org).
+
+Rôles, et déclaration de confidentialité complète :
+[CODE-SIGNING-POLICY.md](CODE-SIGNING-POLICY.md).
+
+En résumé : *this program will not transfer any information to other networked
+systems unless specifically requested by the user or the person installing or
+operating it.* Aucune télémétrie, aucune vérification de mise à jour, aucun
+service tiers.
+
 ## Licence
 
 [MIT](LICENSE).
