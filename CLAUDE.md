@@ -164,6 +164,12 @@ maintainer asks.
 - The console keeps its default code page, so UTF-8 output arrives mangled
   unless `SetConsoleOutputCP(CP_UTF8)` is called — profile names carry em
   dashes and accents, and came out as `Ethernet ÔÇö Atelier`.
+- `defer proc.Call(...)` on a `LazyProc` trips errcheck: `Call` returns an
+  error alongside its two uintptrs. Releasing a handle has nothing to do with
+  that error, so discard it explicitly —
+  `defer func() { _, _, _ = proc.Call(...) }()`. Three of these got through
+  because golangci-lint would not build on the development machine and CI was
+  the first place it ran.
 - A GUI-subsystem binary is never waited on by the shell. `--list` prints
   underneath a prompt that has already returned, which looks like a hang and is
   not. Say so wherever the command line is documented.

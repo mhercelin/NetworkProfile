@@ -77,13 +77,13 @@ func currentSSIDs() map[string]string {
 	if ret, _, _ := procWlanOpenHandle.Call(2, 0, uintptr(unsafe.Pointer(&negotiated)), uintptr(unsafe.Pointer(&handle))); ret != 0 {
 		return nil
 	}
-	defer procWlanCloseHandle.Call(uintptr(handle), 0)
+	defer func() { _, _, _ = procWlanCloseHandle.Call(uintptr(handle), 0) }()
 
 	var list *wlanInterfaceInfoList
 	if ret, _, _ := procWlanEnumInterfaces.Call(uintptr(handle), 0, uintptr(unsafe.Pointer(&list))); ret != 0 {
 		return nil
 	}
-	defer procWlanFreeMemory.Call(uintptr(unsafe.Pointer(list)))
+	defer func() { _, _, _ = procWlanFreeMemory.Call(uintptr(unsafe.Pointer(list))) }()
 
 	found := make(map[string]string)
 	interfaces := unsafe.Slice(&list.InterfaceInfo[0], list.NumberOfItems)
@@ -116,7 +116,7 @@ func connectedSSID(handle syscall.Handle, guid *windows.GUID) string {
 	if ret != 0 || attributes == nil {
 		return ""
 	}
-	defer procWlanFreeMemory.Call(uintptr(unsafe.Pointer(attributes)))
+	defer func() { _, _, _ = procWlanFreeMemory.Call(uintptr(unsafe.Pointer(attributes))) }()
 
 	ssid := attributes.AssociationAttributes.SSID
 	if ssid.Length == 0 || ssid.Length > dot11SSIDMaxLength {
