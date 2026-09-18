@@ -128,6 +128,26 @@ await import('/src/main.js?stub=1')
 The module re-executes and renders against the stubs. This is how the screens
 were checked without administrator rights.
 
+## Deliberately not here
+
+These were considered and closed. Do not offer to build them again unless the
+maintainer asks.
+
+- **An audit log of applied changes.** It was in the first architecture sketch
+  and dropped: the application log already records every change and every netsh
+  command, which covers what the log was for.
+- **Integration tests that drive real adapters.** `internal/network` has a
+  `TestRealAdapters` read-only check behind the `integration` tag, and that is
+  as far as it goes. Exercising the write path for real needs a disposable
+  Windows VM, which is not available. The consequence is worth stating plainly:
+  the test suite proves the right netsh command is produced, never that it has
+  the intended effect. Every bug found after the first release was found by
+  using the tool, not by the tests.
+- **Code signing.** The SignPath Foundation declined — their programme favours
+  projects with an established community. Releases are unsigned and say so.
+  SmartScreen only warns about downloaded files, so a locally built binary
+  raises nothing.
+
 ## Traps already hit
 
 - `winio.DialPipe`'s timeout only covers a pipe that exists but is busy. A pipe
