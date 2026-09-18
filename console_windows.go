@@ -6,8 +6,17 @@ import (
 	"golang.org/x/sys/windows"
 )
 
-// x/sys/windows does not wrap this one.
-var procAttachConsole = windows.NewLazySystemDLL("kernel32.dll").NewProc("AttachConsole")
+// x/sys/windows wraps neither of these.
+var (
+	kernel32               = windows.NewLazySystemDLL("kernel32.dll")
+	procAttachConsole      = kernel32.NewProc("AttachConsole")
+	procSetConsoleOutputCP = kernel32.NewProc("SetConsoleOutputCP")
+)
+
+// codePageUTF8 is CP_UTF8. A console left on its default code page reads the
+// UTF-8 this program writes as single bytes, so a profile named "Ethernet —
+// Atelier" comes out as "Ethernet ÔÇö Atelier".
+const codePageUTF8 = 65001
 
 // attachConsole points standard output at the console the executable was
 // launched from.
@@ -37,4 +46,8 @@ func attachConsole() {
 	}
 	os.Stdout = console
 	os.Stderr = console
+
+	// Profile names carry accents and em dashes; without this the console
+	// renders the UTF-8 they are written in as one mangled character per byte.
+	_, _, _ = procSetConsoleOutputCP.Call(codePageUTF8)
 }

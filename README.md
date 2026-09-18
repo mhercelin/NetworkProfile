@@ -80,9 +80,11 @@ The name accepts either the profile identifier or its displayed name, ignoring
 case; an ambiguous name is refused rather than resolved arbitrarily. The exit
 code is 0 on success, so it can be chained in a script.
 
-Two consequences of the executable being a GUI application: the prompt **returns
-immediately** and the output arrives afterwards — redirecting it
-(`NetworkProfile.exe --list > profiles.txt`) gives a clean result. And each run
+Two consequences of the executable being a GUI application. First, the shell
+**does not wait for it**: the prompt comes back before the output does, so the
+listing appears underneath a prompt that is already accepting input. It looks
+like a hang and is not — press Enter for a clean prompt, or redirect the output
+(`NetworkProfile.exe --list > profiles.txt`) and read the file. Second, each run
 is a separate process, so applying a profile from a shortcut asks for
 administrator rights every time, where the open window asks only once.
 

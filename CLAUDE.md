@@ -133,3 +133,9 @@ were checked without administrator rights.
   still compile before any frontend build.
 - Wails warns that `network.Interface` is a reserved word. The bindings and
   `models.ts` are generated correctly regardless; the warning is cosmetic.
+- The console keeps its default code page, so UTF-8 output arrives mangled
+  unless `SetConsoleOutputCP(CP_UTF8)` is called — profile names carry em
+  dashes and accents, and came out as `Ethernet ÔÇö Atelier`.
+- A GUI-subsystem binary is never waited on by the shell. `--list` prints
+  underneath a prompt that has already returned, which looks like a hang and is
+  not. Say so wherever the command line is documented.
