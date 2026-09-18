@@ -53,6 +53,14 @@ written in JavaScript first, and each was wrong the moment a profile was applied
 from the menu. If a fact is needed by more than the window, it belongs to the
 application, not to its view.
 
+**An inference must never remove the only way to act.** Whether a profile is
+already in effect is deduced from adapter state, and that deduction can be
+wrong. It may tick a menu entry or highlight a row; it must not replace or
+disable the apply control. A Wi-Fi profile once could not be applied at all
+because it was wrongly believed active and its button had been swapped for the
+word "Actif" — nothing ran, so nothing was logged, and the failure looked like
+it came from netsh.
+
 **And a view must never block what it shows.** The refresh hook runs on its own
 goroutine, and `tray` never calls into the menu while holding its state lock:
 an earlier version held that lock across the whole menu construction, so saving
