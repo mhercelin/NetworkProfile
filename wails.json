@@ -13,7 +13,7 @@
   "info": {
     "companyName": "Maxime HERCELIN",
     "productName": "NetworkProfile",
-    "productVersion": "0.1.0",
+    "productVersion": "0.1.1",
     "copyright": "Copyright © 2026 Maxime HERCELIN",
     "comments": "Bascule rapide entre profils réseau Windows"
   }
