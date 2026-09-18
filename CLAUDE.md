@@ -86,9 +86,13 @@ put several adapters back on DHCP at once.
 
 ## Conventions
 
-- Code, comments, tests, commit messages: **English**.
-- Everything the user reads — interface text and validation messages: **French**.
-  `profile.FieldError` messages are UI copy and are French on purpose.
+- **English for everything public**: code, comments, tests, commit messages,
+  README, this file, CI step names, release notes, the repository description.
+- **French only for what the operator reads inside the application**: interface
+  labels, validation messages, command-line output. `profile.FieldError`
+  messages are UI copy and are French on purpose.
+- In doubt, ask who reads the text. A contributor or a visitor to the
+  repository reads English; a person in front of the window reads French.
 - Frontend is vanilla JS with no framework and no bundled dependencies beyond
   Vite and the embedded fonts. Fonts are vendored, never fetched: this tool is
   used to repair broken network connections.

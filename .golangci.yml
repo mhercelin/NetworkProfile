@@ -2,7 +2,7 @@ version: "2"
 
 linters:
   enable:
-    - errcheck # un retour d'erreur ignoré, c'est une panne silencieuse
+    - errcheck # an ignored error return is a silent failure
     - govet
     - ineffassign
     - staticcheck
@@ -10,10 +10,10 @@ linters:
 
   settings:
     errcheck:
-      # Écrire sur la console, nettoyer un temporaire dans un chemin d'erreur ou
-      # rendre un handle : aucun de ces appels n'a quoi que ce soit à apprendre
-      # à l'appelant. Les exclure garde le linter crédible — s'il ne remonte que
-      # des cas corrects, on prend l'habitude de ne plus le lire.
+      # Writing to the console, cleaning up a temporary file on an error path,
+      # or handing a handle back: none of these has anything to tell the caller.
+      # Excluding them keeps the linter credible — one that only reports correct
+      # code is one nobody reads.
       exclude-functions:
         - fmt.Fprint
         - fmt.Fprintf
@@ -23,8 +23,8 @@ linters:
 
   exclusions:
     rules:
-      # Dans un test, une fermeture qui échoue ne change ni le verdict ni ce
-      # qu'on peut en faire. Ailleurs, chaque cas est traité explicitement.
+      # In a test, a close that fails changes neither the verdict nor what can
+      # be done about it. Everywhere else each case is handled explicitly.
       - path: _test\.go
         linters:
           - errcheck

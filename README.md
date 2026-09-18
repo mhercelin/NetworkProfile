@@ -1,95 +1,94 @@
 # NetworkProfile
 
-Bascule rapide entre configurations réseau sous Windows 11.
+Switch between saved network configurations on Windows 11.
 
-Enregistrez une configuration IP par site, par machine ou par équipement, puis
-passez de l'une à l'autre en un clic — sans rouvrir les panneaux réseau de
-Windows, et sans retaper une adresse de mémoire.
+Save one configuration per site, per machine or per piece of equipment, then
+move between them in a click — without reopening the Windows network panels,
+and without retyping an address from memory.
 
-L'outil est né d'un besoin concret : configurer des équipements industriels qui
-vivent chacun sur sa propre plage d'adresses (`192.168.0.x` pour un automate,
-`10.10.128.x` sur un site client, `172.16.x.x` sur un chantier), plusieurs fois
-par jour, sur une machine dont on n'est pas administrateur.
+The tool comes from a concrete need: configuring industrial equipment that each
+lives on its own address range (`192.168.0.x` for a PLC, `10.10.128.x` on a
+customer site, `172.16.x.x` on a job site), several times a day, on a machine
+you are not an administrator of.
 
-## Ce qu'il fait
+The interface is in French.
 
-- **Profils multi-cartes.** Un profil porte une liste de cartes cibles, pas une
-  seule. Le profil « Défaut » remet ainsi l'Ethernet *et* le Wi-Fi en DHCP d'un
-  seul geste.
-- **Adresse fixe ou DHCP**, avec adresse, masque, passerelle et plusieurs DNS.
-- **Wi-Fi** : bascule vers un réseau déjà enregistré par Windows, ou changement
-  d'adresse en restant sur le réseau courant. Les clés ne sont jamais
-  manipulées : c'est Windows qui les détient.
-- **Changement rapide** : appliquer une adresse ponctuelle sans créer de profil.
-- **Cartes virtuelles masquées** par défaut — Hyper-V, WSL et VMware ne
-  polluent pas le sélecteur, mais restent affichables.
-- **Profil actif signalé** : la ligne dont la configuration correspond à l'état
-  réel des cartes est mise en évidence.
-- **Reste en zone de notification**, pour ne demander les droits qu'une fois.
-- **Profils épinglés** : les profils marqués d'une épingle apparaissent
-  directement dans le menu de l'icône, donc un changement de site se fait en
-  deux clics sans ouvrir la fenêtre.
+## What it does
 
-## Le modèle de privilèges
+- **Profiles covering several adapters.** A profile holds a list of target
+  adapters, not a single one. The "Défaut" profile therefore puts Ethernet
+  *and* Wi-Fi back on DHCP in one go.
+- **Fixed address or DHCP**, with address, mask, gateway and several DNS
+  servers.
+- **Wi-Fi**: switch to a network Windows already knows, or change the address
+  while staying on the current one. Keys are never handled: Windows holds them.
+- **Quick change**: apply a one-off address without creating a profile.
+- **Virtual adapters hidden** by default — Hyper-V, WSL and VMware do not
+  clutter the picker, but can be shown.
+- **The active profile is marked**: the row whose configuration matches what the
+  adapters actually report is highlighted.
+- **Stays in the notification area**, so credentials are asked for once.
+- **Pinned profiles** appear directly in the icon's menu, so changing site takes
+  two clicks without opening the window.
 
-C'est la partie non évidente du projet, et elle mérite d'être comprise avant de
-toucher au code.
+## The privilege model
 
-Reconfigurer une carte réseau exige les droits administrateur. Mais sur un poste
-d'entreprise, l'utilisateur n'est **pas** administrateur : élever un programme y
-signifie basculer sur un **compte différent**. Une application entièrement
-élevée y perd donc son propre profil utilisateur — `%AppData%` désigne alors le
-compte administrateur, et les profils réseau disparaissent d'un lancement à
-l'autre.
+This is the part of the project that is not obvious, and it is worth
+understanding before touching the code.
 
-L'application est donc coupée en deux :
+Reconfiguring a network adapter requires administrator rights. But on a company
+machine the operator is **not** an administrator: elevating a program there
+means switching to a **different account**. A fully elevated application
+therefore loses its own user profile — `%AppData%` then points at the
+administrator account, and the network profiles disappear between launches.
+
+So the application is cut in two:
 
 ```
-NetworkProfile.exe              votre compte, aucune élévation
-  ├─ profils        %AppData%\NetworkProfile\profiles.yaml
-  ├─ lecture état   API Windows, directe — aucun privilège requis
-  └─ écriture ──────┐
-                    │  tube nommé, nom aléatoire, accès restreint à votre compte
-NetworkProfile.exe --helper     élevé, lancé à la première modification
+NetworkProfile.exe              your account, no elevation
+  ├─ profiles       %AppData%\NetworkProfile\profiles.yaml
+  ├─ adapter state  Windows API, directly — no privilege needed
+  └─ writes ────────┐
+                    │  named pipe, random name, restricted to your account
+NetworkProfile.exe --helper     elevated, started at the first change
   └─ netsh
 ```
 
-Conséquences pratiques :
+What follows from it:
 
-- Ouvrir l'application et consulter l'état du réseau ne demande **rien**.
-- Les identifiants administrateur sont demandés **au premier changement**, puis
-  plus du tout tant que l'application reste ouverte — d'où l'icône en zone de
-  notification, qui la garde vivante après fermeture de la fenêtre.
-- L'assistant élevé surveille la fenêtre qui l'a lancé et **s'arrête avec
-  elle** : aucun processus privilégié ne subsiste.
-- Son tube porte un nom aléatoire et une liste de contrôle d'accès protégée ne
-  nommant que votre compte, SYSTEM et les administrateurs : aucun autre
-  utilisateur du poste ne peut lui parler.
+- Opening the application and looking at the network state asks for **nothing**.
+- Administrator credentials are asked for **at the first change**, then not
+  again for as long as the application stays open — hence the notification area
+  icon, which keeps it alive after the window is closed.
+- The elevated helper watches the window that started it and **exits with it**:
+  no privileged process is left behind.
+- Its pipe carries a random name and a protected access control list naming only
+  your account, SYSTEM and the administrators: no other user of the machine can
+  talk to it.
 
-## En ligne de commande
+## From the command line
 
-Pour qu'un site ait son propre raccourci sur le bureau, sans passer par la
-fenêtre :
+So that a site can have its own desktop shortcut, without going through the
+window:
 
 ```bat
 NetworkProfile.exe --profile "Ethernet — Atelier"
 NetworkProfile.exe --list
 ```
 
-Le nom accepte l'identifiant du profil ou son nom affiché, sans tenir compte de
-la casse ; un nom ambigu est refusé plutôt que tranché au hasard. Le code de
-retour vaut 0 en cas de succès, ce qui permet d'enchaîner dans un script.
+The name accepts either the profile identifier or its displayed name, ignoring
+case; an ambiguous name is refused rather than resolved arbitrarily. The exit
+code is 0 on success, so it can be chained in a script.
 
-Deux conséquences du fait que l'exécutable est une application graphique :
-l'invite de commande **rend la main immédiatement** et l'affichage arrive
-ensuite — rediriger la sortie (`NetworkProfile.exe --list > profils.txt`) donne
-un résultat propre. Et chaque exécution est un processus isolé, donc appliquer
-un profil depuis un raccourci demande les droits administrateur à chaque fois,
-là où la fenêtre ouverte ne les demande qu'une fois.
+Two consequences of the executable being a GUI application: the prompt **returns
+immediately** and the output arrives afterwards — redirecting it
+(`NetworkProfile.exe --list > profiles.txt`) gives a clean result. And each run
+is a separate process, so applying a profile from a shortcut asks for
+administrator rights every time, where the open window asks only once.
 
-## Format des profils
+## Profile format
 
-`%AppData%\NetworkProfile\profiles.yaml`, lisible et modifiable à la main :
+`%AppData%\NetworkProfile\profiles.yaml`, readable and editable by hand:
 
 ```yaml
 version: 1
@@ -104,9 +103,10 @@ profiles:
 
   - id: wifi-site-client-b
     name: Wi-Fi — Site client B
+    pinned: true
     targets:
       - interface: Wi-Fi
-        ssid: SiteB-Corp        # réseau déjà connu de Windows
+        ssid: SiteB-Corp        # a network Windows already knows
         mode: static
         address: 10.10.128.20
         mask: 255.255.255.0
@@ -122,27 +122,27 @@ profiles:
         mode: dhcp
 ```
 
-Une passerelle hors du sous-réseau de l'adresse est refusée : Windows l'accepte
-et route ensuite de façon imprévisible, ce qui coûte une heure de diagnostic.
+A gateway outside the subnet of its address is refused: Windows accepts it and
+then routes unpredictably, which costs an hour of diagnosis.
 
-## Construire
+## Building
 
-Nécessite [Go](https://go.dev/dl/), [Node.js](https://nodejs.org/) et la
-[CLI Wails](https://wails.io/docs/gettingstarted/installation).
+Requires [Go](https://go.dev/dl/), [Node.js](https://nodejs.org/) and the
+[Wails CLI](https://wails.io/docs/gettingstarted/installation).
 
 ```bash
 go install github.com/wailsapp/wails/v2/cmd/wails@latest
 wails build
 ```
 
-Le binaire atterrit dans `build/bin/NetworkProfile.exe`.
+The binary lands in `build/bin/NetworkProfile.exe`.
 
-Pour itérer sur l'interface, `wails dev` doit tourner dans un **terminal
-administrateur** : le binaire de développement hérite du manifeste et refuse
-sinon de démarrer.
+To iterate on the interface, `wails dev` must run in an **administrator
+terminal**: the development binary inherits the manifest and otherwise refuses
+to start.
 
-L'icône est dessinée par programme — pour la modifier, éditez les coordonnées
-dans `tools/icongen/main.go` puis :
+The icon is drawn programmatically — to change it, edit the coordinates in
+`tools/icongen/main.go` and run:
 
 ```bash
 go run tools/icongen/main.go
@@ -155,9 +155,9 @@ go test ./...
 cd frontend && npm test
 ```
 
-Les tests Go pilotent une fausse couche réseau : aucun n'altère la configuration
-de la machine. Ceux qui touchent de vraies cartes sont derrière une étiquette de
-compilation et ne partent jamais tout seuls :
+The Go tests drive a fake network layer: none of them alters the machine's
+configuration. The ones that touch real adapters sit behind a build tag and
+never run on their own:
 
 ```bash
 go test -tags integration ./internal/network -run TestRealAdapters -v
@@ -165,17 +165,16 @@ go test -tags integration ./internal/network -run TestRealAdapters -v
 
 ## Code signing policy
 
-Les binaires publiés sont signés. Free code signing provided by
+Released binaries are signed. Free code signing provided by
 [SignPath.io](https://signpath.io), certificate by
 [SignPath Foundation](https://signpath.org).
 
-Rôles, et déclaration de confidentialité complète :
+Roles and the full privacy statement:
 [CODE-SIGNING-POLICY.md](CODE-SIGNING-POLICY.md).
 
-En résumé : *this program will not transfer any information to other networked
+In short: this program will not transfer any information to other networked
 systems unless specifically requested by the user or the person installing or
-operating it.* Aucune télémétrie, aucune vérification de mise à jour, aucun
-service tiers.
+operating it. No telemetry, no update check, no third-party service.
 
 ## Licence
 

@@ -10,45 +10,45 @@ permissions:
 
 jobs:
   test:
-    name: Vet et tests
+    name: Vet and tests
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
 
-      # `stable` et non `go-version-file` : la directive `go` de go.mod est un
-      # minimum de langage, pas un choix de chaîne d'outils. La prendre au pied
-      # de la lettre installe une version non corrigée, et govulncheck remonte
-      # alors les failles de la bibliothèque standard elle-même.
+      # `stable` rather than `go-version-file`: the `go` directive in go.mod is
+      # a minimum language version, not a toolchain choice. Taking it literally
+      # installs an unpatched release, and govulncheck then reports the
+      # standard library's own advisories.
       - uses: actions/setup-go@v5
         with:
           go-version: stable
           cache: true
 
-      - name: Formatage
+      - name: Formatting
         shell: pwsh
         run: |
           $unformatted = gofmt -l .
           if ($unformatted) {
-            Write-Host "Fichiers non formatés :`n$unformatted"
+            Write-Host "Unformatted files:`n$unformatted"
             exit 1
           }
 
       - run: go vet ./...
 
-      # Construit depuis les sources plutôt que via l'action officielle : la
-      # version est alors épinglée par une seule ligne, lisible ici.
-      - name: Analyse statique
+      # Built from source rather than through the official action: the version
+      # is then pinned by a single line, readable right here.
+      - name: Static analysis
         run: |
           go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.13.2
           golangci-lint run ./...
 
-      - name: Vulnérabilités connues
+      - name: Known vulnerabilities
         run: |
           go install golang.org/x/vuln/cmd/govulncheck@latest
           govulncheck ./...
 
-      # Les tests marqués `integration` reconfigurent de vraies cartes réseau :
-      # ils restent hors CI et se lancent à la main avant une release.
+      # The `integration` tests reconfigure real network adapters: they stay out
+      # of CI and are run by hand before a release.
       - run: go test ./... -count=1
 
       - uses: actions/setup-node@v4
@@ -57,22 +57,19 @@ jobs:
           cache: npm
           cache-dependency-path: frontend/package-lock.json
 
-      - name: Tests frontend
+      - name: Frontend tests
         working-directory: frontend
         run: |
           npm ci
           npm test
 
   build:
-    name: Build applicatif
+    name: Application build
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
 
-      # `stable` et non `go-version-file` : la directive `go` de go.mod est un
-      # minimum de langage, pas un choix de chaîne d'outils. La prendre au pied
-      # de la lettre installe une version non corrigée, et govulncheck remonte
-      # alors les failles de la bibliothèque standard elle-même.
+      # See the note above: `stable`, not the go.mod directive.
       - uses: actions/setup-go@v5
         with:
           go-version: stable
@@ -84,16 +81,16 @@ jobs:
           cache: npm
           cache-dependency-path: frontend/package-lock.json
 
-      - name: Installer la CLI Wails
+      - name: Install the Wails CLI
         run: go install github.com/wailsapp/wails/v2/cmd/wails@v2.15.0
 
-      # Surtout pas -skipbindings : les liaisons JS sont générées et donc
-      # absentes du dépôt, et le frontend ne compile pas sans elles.
-      - name: Compiler
+      # Never -skipbindings: the JS bindings are generated and kept out of the
+      # repository, and the frontend does not compile without them.
+      - name: Build
         run: wails build -clean
 
       - uses: actions/upload-artifact@v4
         with:
-          name: NetworkProfile-non-signe
+          name: NetworkProfile-unsigned
           path: build/bin/NetworkProfile.exe
           retention-days: 7

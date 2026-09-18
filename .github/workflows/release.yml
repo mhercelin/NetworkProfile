@@ -10,29 +10,29 @@ permissions:
 
 jobs:
   release:
-    name: Compiler et publier
+    name: Build and publish
     runs-on: windows-latest
 
     steps:
       - uses: actions/checkout@v4
 
-      # La version est écrite à trois endroits : le tag, wails.json (qui la met
-      # dans les ressources du binaire) et le pied de la barre latérale. Les
-      # laisser diverger produirait une release dont le binaire annonce une
-      # autre version que son nom.
-      - name: Vérifier la cohérence des versions
+      # The version is written in three places: the tag, wails.json (which puts
+      # it in the binary's resources) and the sidebar footer. Letting them drift
+      # would produce a release whose binary announces a different version than
+      # its own name.
+      - name: Check the versions agree
         shell: pwsh
         run: |
           $tag = "${{ github.ref_name }}" -replace '^v', ''
           $wails = (Get-Content wails.json -Raw | ConvertFrom-Json).info.productVersion
-          $ihm = (Select-String -Path frontend/src/main.js -Pattern 'v(\d+\.\d+\.\d+)').Matches[0].Groups[1].Value
+          $ui = (Select-String -Path frontend/src/main.js -Pattern 'v(\d+\.\d+\.\d+)').Matches[0].Groups[1].Value
 
           "tag       : $tag"
           "wails.json: $wails"
-          "interface : $ihm"
+          "interface : $ui"
 
-          if ($tag -ne $wails -or $tag -ne $ihm) {
-            Write-Host "::error::Les versions divergent. Alignez wails.json et frontend/src/main.js sur le tag avant de publier."
+          if ($tag -ne $wails -or $tag -ne $ui) {
+            Write-Host "::error::Versions disagree. Align wails.json and frontend/src/main.js with the tag before releasing."
             exit 1
           }
 
@@ -47,19 +47,18 @@ jobs:
           cache: npm
           cache-dependency-path: frontend/package-lock.json
 
-      - name: Installer la CLI Wails
+      - name: Install the Wails CLI
         run: go install github.com/wailsapp/wails/v2/cmd/wails@v2.15.0
 
-      # Surtout pas -skipbindings : les liaisons JS sont générées et absentes
-      # du dépôt, et le frontend ne compile pas sans elles.
-      - name: Compiler
+      # Never -skipbindings: the JS bindings are generated and kept out of the
+      # repository, and the frontend does not compile without them.
+      - name: Build
         run: wails build -clean
 
-      # C'est ici que la signature SignPath viendra s'insérer, entre la
-      # compilation et le calcul des empreintes : elle signe à distance, il n'y
-      # a donc aucun certificat à déposer sur le runner.
+      # Signing slots in here, between the build and the checksums: SignPath
+      # signs remotely, so no certificate ever reaches the runner.
 
-      - name: Calculer les empreintes
+      - name: Compute checksums
         shell: pwsh
         working-directory: build/bin
         run: |
@@ -68,7 +67,7 @@ jobs:
             Set-Content checksums.txt -Encoding ascii
           Get-Content checksums.txt
 
-      - name: Publier la release
+      - name: Publish the release
         uses: softprops/action-gh-release@v2
         with:
           files: |
@@ -77,31 +76,30 @@ jobs:
           body: |
             ## Installation
 
-            Téléchargez `NetworkProfile.exe` et lancez-le : il n'y a rien à
-            installer. Les profils sont enregistrés dans
-            `%AppData%\NetworkProfile`.
+            Download `NetworkProfile.exe` and run it: there is nothing to
+            install. Profiles are stored in `%AppData%\NetworkProfile`.
 
-            Vérifiez l'empreinte du fichier téléchargé :
+            Check the downloaded file against `checksums.txt`:
 
             ```powershell
             Get-FileHash NetworkProfile.exe -Algorithm SHA256
             ```
 
-            et comparez-la à `checksums.txt`.
+            The interface is in French.
 
-            ## Droits administrateur
+            ## Administrator rights
 
-            L'application s'ouvre sans rien demander. Les identifiants
-            administrateur ne sont demandés qu'au premier changement de
-            configuration, et une seule fois tant qu'elle reste ouverte —
-            fermer la fenêtre la laisse dans la zone de notification.
+            The application opens without asking for anything. Administrator
+            credentials are requested at the first configuration change, and
+            only once for as long as it stays open — closing the window leaves
+            it in the notification area.
 
             ## Code signing policy
 
             Free code signing provided by [SignPath.io](https://signpath.io),
             certificate by [SignPath Foundation](https://signpath.org).
 
-            Rôles et déclaration de confidentialité :
+            Roles and privacy statement:
             [CODE-SIGNING-POLICY.md](https://github.com/mhercelin/NetworkProfile/blob/main/CODE-SIGNING-POLICY.md).
 
             This program will not transfer any information to other networked
