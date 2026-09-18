@@ -1,6 +1,6 @@
 import './style.css'
 import {
-  ActiveProfileID,
+  ActiveProfileIDs,
   ApplyProfile,
   ApplyTarget,
   DeleteProfile,
@@ -43,9 +43,10 @@ const state = {
   error: '',
   fatal: '',
   elevated: false,
-  // Which profile matches the adapters right now. Decided in Go, so the window
-  // and the notification area menu cannot disagree about it.
-  activeId: '',
+  // Which profiles match the adapters right now — several can, one per adapter.
+  // Decided in Go, so the window and the notification area menu cannot disagree
+  // about it.
+  activeIds: [],
 }
 
 // Nearly every network this tool is pointed at is a /24.
@@ -158,12 +159,12 @@ async function loadAll() {
     const [profiles, interfaces, active, applied] = await Promise.all([
       Profiles(),
       Interfaces(),
-      ActiveProfileID(),
+      ActiveProfileIDs(),
       LastApplied(),
     ])
     state.profiles = profiles ?? []
     state.interfaces = interfaces ?? []
-    state.activeId = active ?? ''
+    state.activeIds = active ?? []
     state.lastApplied = applied
     state.fatal = ''
   } catch (err) {
@@ -224,7 +225,7 @@ async function reloadInterfaces() {
   try {
     state.interfaces = (await Interfaces()) ?? []
     state.elevated = await Elevated()
-    state.activeId = (await ActiveProfileID()) ?? ''
+    state.activeIds = (await ActiveProfileIDs()) ?? []
     state.lastApplied = await LastApplied()
   } catch (err) {
     state.error = `Lecture des cartes réseau : ${err}`
@@ -590,7 +591,7 @@ EventsOn('profiles:changed', async () => {
     state.profiles = (await Profiles()) ?? []
     state.interfaces = (await Interfaces()) ?? []
     state.elevated = await Elevated()
-    state.activeId = (await ActiveProfileID()) ?? ''
+    state.activeIds = (await ActiveProfileIDs()) ?? []
     state.lastApplied = await LastApplied()
   } catch {
     /* nothing to add: the next action reports its own failure */

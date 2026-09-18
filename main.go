@@ -172,9 +172,9 @@ func runInterface() error {
 			log.Printf("relecture des profils : %v", err)
 			return
 		}
-		active, err := app.ActiveProfileID()
+		active, err := app.ActiveProfileIDs()
 		if err != nil {
-			log.Printf("profil actif : %v", err)
+			log.Printf("profils actifs : %v", err)
 		}
 
 		icon.SetProfiles(profiles, active)

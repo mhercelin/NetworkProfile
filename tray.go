@@ -3,6 +3,7 @@ package main
 import (
 	_ "embed"
 	"log"
+	"slices"
 	"sync"
 
 	"github.com/energye/systray"
@@ -34,7 +35,7 @@ type tray struct {
 	header *systray.MenuItem
 	slots  []*systray.MenuItem
 	pinned []profile.Profile
-	active string
+	active []string
 	ready  bool
 
 	// renderMu serialises menu updates on their own, so two refreshes cannot
@@ -64,7 +65,7 @@ func (t *tray) run(show, quit func()) {
 		header.Disable()
 
 		// Checkboxes rather than plain entries: the tick is how a menu says
-		// "this is the one you are on", and Windows draws it itself.
+		// "this one is in effect", and Windows draws it itself.
 		slots := make([]*systray.MenuItem, 0, traySlots)
 		for slot := range traySlots {
 			item := systray.AddMenuItemCheckbox("", "", false)
@@ -92,9 +93,9 @@ func (t *tray) run(show, quit func()) {
 	}, nil)
 }
 
-// SetProfiles hands over the current profiles and which one is active. Only the
-// pinned ones reach the menu.
-func (t *tray) SetProfiles(profiles []profile.Profile, active string) {
+// SetProfiles hands over the current profiles and which of them are in effect.
+// Only the pinned ones reach the menu.
+func (t *tray) SetProfiles(profiles []profile.Profile, active []string) {
 	pinned := make([]profile.Profile, 0, traySlots)
 	for _, p := range profiles {
 		if p.Pinned {
@@ -119,7 +120,7 @@ func (t *tray) SetProfiles(profiles []profile.Profile, active string) {
 }
 
 // render touches the menu, and never runs under mu.
-func (t *tray) render(header *systray.MenuItem, slots []*systray.MenuItem, pinned []profile.Profile, active string) {
+func (t *tray) render(header *systray.MenuItem, slots []*systray.MenuItem, pinned []profile.Profile, active []string) {
 	t.renderMu.Lock()
 	defer t.renderMu.Unlock()
 
@@ -137,7 +138,7 @@ func (t *tray) render(header *systray.MenuItem, slots []*systray.MenuItem, pinne
 
 		p := pinned[i]
 		item.SetTitle(p.Name)
-		if p.ID == active {
+		if slices.Contains(active, p.ID) {
 			item.Check()
 			// Re-applying the configuration already in place would only cost an
 			// elevation prompt for nothing.
@@ -149,7 +150,7 @@ func (t *tray) render(header *systray.MenuItem, slots []*systray.MenuItem, pinne
 		item.Show()
 	}
 
-	log.Printf("zone de notification : %d profil(s) affiché(s), actif=%q", len(pinned), active)
+	log.Printf("zone de notification : %d profil(s) affiché(s), actifs=%v", len(pinned), active)
 }
 
 // applySlot resolves the slot under the lock but applies outside it: applying

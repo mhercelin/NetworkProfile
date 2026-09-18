@@ -216,18 +216,20 @@ func (a *App) LastApplied() Applied {
 	return a.applied
 }
 
-// ActiveProfileID reports which stored profile matches what the adapters
-// currently report, or an empty string when none does.
-func (a *App) ActiveProfileID() (string, error) {
+// ActiveProfileIDs reports every stored profile whose configuration matches
+// what the adapters currently report. There can be more than one: profiles
+// target adapters, and an Ethernet profile and a Wi-Fi profile are in effect at
+// the same time.
+func (a *App) ActiveProfileIDs() ([]string, error) {
 	profiles, err := a.store.Load()
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	adapters, err := a.manager.Interfaces()
 	if err != nil {
-		return "", err
+		return nil, err
 	}
-	return apply.Active(profiles, adapters), nil
+	return apply.ActiveIDs(profiles, adapters), nil
 }
 
 // ApplyTarget applies one interface configuration without saving it, which is

@@ -54,7 +54,8 @@ function row(profile, state) {
   const targets = profile.targets ?? []
   const single = targets.length === 1 ? targets[0] : null
   const allDHCP = targets.every((t) => t.mode === 'dhcp')
-  const active = profile.id === state.activeId
+  // Several profiles can be in effect at once, one per adapter.
+  const active = state.activeIds.includes(profile.id)
   const busy = state.applying === profile.id
 
   const address = single && single.mode === 'static' ? cidr(single.address, single.mask) : ''

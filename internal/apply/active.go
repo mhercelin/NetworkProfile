@@ -5,22 +5,28 @@ import (
 	"networkprofile/internal/profile"
 )
 
-// Active reports the identifier of the profile whose configuration matches what
-// the adapters currently report, or an empty string when none does.
+// ActiveIDs reports every profile whose configuration matches what the adapters
+// currently report.
 //
-// It lives here rather than in the interface because two surfaces need the same
-// answer — the window's list and the notification area menu — and two
-// implementations of "is this the one" would drift apart.
+// There is deliberately no single "active profile": profiles target adapters,
+// and a machine has several. An Ethernet profile and a Wi-Fi profile are active
+// at the same time, each on its own adapter, and answering with one of them
+// would leave the other looking unapplied.
+//
+// It lives here rather than in the interface because three surfaces need the
+// same answer — the window's list, the notification area menu and the command
+// line — and three implementations of "is this one in effect" would drift.
 //
 // DNS is deliberately left out of the comparison: Windows reorders and
 // supplements resolvers on its own, which would make the match flicker.
-func Active(profiles []profile.Profile, adapters []network.Interface) string {
+func ActiveIDs(profiles []profile.Profile, adapters []network.Interface) []string {
+	active := make([]string, 0, len(profiles))
 	for _, p := range profiles {
 		if matches(p, adapters) {
-			return p.ID
+			active = append(active, p.ID)
 		}
 	}
-	return ""
+	return active
 }
 
 func matches(p profile.Profile, adapters []network.Interface) bool {
