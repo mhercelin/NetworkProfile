@@ -30,6 +30,7 @@ function adapterCell(iface) {
     <span class="adapter__dot${connected ? '' : ' adapter__dot--off'}"></span>
     ${ifaceIcon(iface.kind, 13)}
     <span class="${connected ? '' : 'adapter__name--off'}">${esc(iface.name)}</span>
+    ${iface.ssid ? `<span class="adapter__ssid">${esc(iface.ssid)}</span>` : ''}
     ${
       address
         ? `<span class="adapter__addr${connected ? '' : ' adapter__addr--off'}">${esc(address)}</span>

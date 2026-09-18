@@ -5,6 +5,7 @@ package network
 import (
 	"context"
 	"fmt"
+	"log"
 	"os/exec"
 	"strings"
 	"syscall"
@@ -77,8 +78,16 @@ func runNetsh(args []string) error {
 	cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
 
 	out, err := cmd.CombinedOutput()
+	printed := strings.TrimSpace(string(out))
+
+	// Logged on both paths: a command that is never sent and a command that
+	// fails silently look identical from the outside, and telling them apart is
+	// most of the work when a profile does not take effect.
 	if err != nil {
-		return fmt.Errorf("netsh %s : %w : %s", strings.Join(args, " "), err, strings.TrimSpace(string(out)))
+		log.Printf("netsh %s -> %v : %s", strings.Join(args, " "), err, printed)
+		return fmt.Errorf("netsh %s : %w : %s", strings.Join(args, " "), err, printed)
 	}
+
+	log.Printf("netsh %s -> ok : %s", strings.Join(args, " "), printed)
 	return nil
 }

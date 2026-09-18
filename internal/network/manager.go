@@ -23,6 +23,11 @@ type Interface struct {
 	Mask        string   `json:"mask"`
 	Gateway     string   `json:"gateway"`
 	DNS         []string `json:"dns"`
+	// SSID is the network a wireless adapter is actually connected to, empty
+	// when it is on none. Without it, a profile that says "join network X"
+	// could be reported as being in effect while the adapter sits connected to
+	// nothing at all.
+	SSID string `json:"ssid"`
 }
 
 // StaticConfig is a fixed address to apply to an interface.

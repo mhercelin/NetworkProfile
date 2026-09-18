@@ -87,12 +87,19 @@ func list(env Env) int {
 func describe(p profile.Profile) string {
 	parts := make([]string, 0, len(p.Targets))
 	for _, target := range p.Targets {
-		switch target.Mode {
-		case profile.ModeDHCP:
-			parts = append(parts, target.Interface+" : DHCP")
-		default:
-			parts = append(parts, fmt.Sprintf("%s : %s", target.Interface, target.Address))
+		part := target.Interface + " : "
+		if target.Mode == profile.ModeDHCP {
+			part += "DHCP"
+		} else {
+			part += target.Address
 		}
+		// Shown because a Wi-Fi profile that does not switch network and one
+		// that does are otherwise indistinguishable in this listing — which is
+		// the first thing to check when a profile does not do what was meant.
+		if target.SSID != "" {
+			part += fmt.Sprintf(" sur %q", target.SSID)
+		}
+		parts = append(parts, part)
 	}
 	return fmt.Sprintf("%s (%s)", p.Name, strings.Join(parts, ", "))
 }

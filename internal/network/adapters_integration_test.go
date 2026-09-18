@@ -20,8 +20,8 @@ func TestRealAdapters(t *testing.T) {
 	}
 
 	for _, iface := range list {
-		t.Logf("%-38s kind=%-8s virtual=%-5t up=%-5t dhcp=%-5t addr=%s mask=%s gw=%s dns=%v",
-			iface.Name, iface.Kind, iface.Virtual, iface.Up, iface.DHCP,
+		t.Logf("%-38s kind=%-8s virtual=%-5t up=%-5t dhcp=%-5t ssid=%-16q addr=%s mask=%s gw=%s dns=%v",
+			iface.Name, iface.Kind, iface.Virtual, iface.Up, iface.DHCP, iface.SSID,
 			iface.Address, iface.Mask, iface.Gateway, iface.DNS)
 
 		if iface.Kind != KindWiFi {

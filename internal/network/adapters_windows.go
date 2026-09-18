@@ -36,6 +36,7 @@ func adapters() ([]Interface, error) {
 		return nil, err
 	}
 	physical, classified := physicalAdapterIDs()
+	connected := currentSSIDs()
 
 	var out []Interface
 	for _, row := range rows {
@@ -53,6 +54,7 @@ func adapters() ([]Interface, error) {
 			Virtual:     classified && !physical[strings.ToLower(id)],
 			Up:          row.OperStatus == operStatusUp,
 			DHCP:        row.Flags&flagDHCPEnabled != 0,
+			SSID:        connected[strings.ToLower(id)],
 		}
 
 		for unicast := row.FirstUnicastAddress; unicast != nil; unicast = unicast.Next {

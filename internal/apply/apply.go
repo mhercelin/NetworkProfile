@@ -3,6 +3,7 @@ package apply
 import (
 	"errors"
 	"fmt"
+	"log"
 
 	"networkprofile/internal/network"
 	"networkprofile/internal/profile"
@@ -54,6 +55,8 @@ func (s *Service) ApplyTarget(target profile.Target) error {
 }
 
 func (s *Service) applyTarget(target profile.Target) error {
+	log.Printf("application : %s mode=%s ssid=%q adresse=%q", target.Interface, target.Mode, target.SSID, target.Address)
+
 	if target.SSID != "" {
 		// Joining a network makes Windows reconfigure that adapter, so the
 		// address has to be set after the connection, never before.

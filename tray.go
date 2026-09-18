@@ -138,14 +138,15 @@ func (t *tray) render(header *systray.MenuItem, slots []*systray.MenuItem, pinne
 
 		p := pinned[i]
 		item.SetTitle(p.Name)
+
+		// Ticked when believed to be in effect, but never disabled: whether a
+		// profile is already applied is an inference over the adapter state, and
+		// an inference that turns out wrong must not be able to take the only
+		// way of applying it away.
 		if slices.Contains(active, p.ID) {
 			item.Check()
-			// Re-applying the configuration already in place would only cost an
-			// elevation prompt for nothing.
-			item.Disable()
 		} else {
 			item.Uncheck()
-			item.Enable()
 		}
 		item.Show()
 	}

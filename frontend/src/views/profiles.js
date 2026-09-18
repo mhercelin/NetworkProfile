@@ -91,6 +91,11 @@ function actions(profile, active, busy, state) {
       <button class="btn btn--sm btn--danger" data-action="confirm-delete" data-id="${esc(profile.id)}">Oui</button>`
   }
 
+  // The button is always there, even on a profile believed to be in effect.
+  // Deciding that a profile is already applied is an inference over the adapter
+  // state, and an inference that turns out wrong must never be able to lock the
+  // operator out of applying it — which is exactly what happened when a Wi-Fi
+  // profile was wrongly reported as active and had no button left to click.
   return `
     <span class="row__tools">
       <button class="btn btn--ghost${profile.pinned ? ' is-pinned' : ''}" data-action="toggle-pin" data-id="${esc(profile.id)}"
@@ -98,11 +103,8 @@ function actions(profile, active, busy, state) {
       <button class="btn btn--ghost" data-action="edit-profile" data-id="${esc(profile.id)}" title="Modifier">${icons.pencil(14)}</button>
       <button class="btn btn--ghost btn--danger" data-action="delete-profile" data-id="${esc(profile.id)}" title="Supprimer">${icons.trash(14)}</button>
     </span>
-    ${
-      active
-        ? `<span class="row__applied">${icons.check(13)} Actif</span>`
-        : `<button class="btn btn--sm" data-action="apply-profile" data-id="${esc(profile.id)}"${busy ? ' disabled' : ''}>${busy ? 'En cours…' : 'Appliquer'}</button>`
-    }`
+    ${active ? `<span class="row__applied" title="Cette configuration est celle en place">${icons.check(14)}</span>` : ''}
+    <button class="btn btn--sm" data-action="apply-profile" data-id="${esc(profile.id)}"${busy ? ' disabled' : ''}>${busy ? 'En cours…' : 'Appliquer'}</button>`
 }
 
 function subtitle(targets, state) {

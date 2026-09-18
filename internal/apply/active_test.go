@@ -132,6 +132,52 @@ func TestActiveIDsIgnoresDNS(t *testing.T) {
 	}
 }
 
+// A profile that names a network is only in effect on that network. Reported
+// from the field: a Wi-Fi profile showed as applied while the adapter was
+// connected to nothing.
+func TestActiveIDsChecksTheNetworkAWiFiProfileNames(t *testing.T) {
+	p := profile.Profile{
+		ID:      "maison",
+		Name:    "Maison",
+		Targets: []profile.Target{{Interface: "Wi-Fi", Mode: profile.ModeDHCP, SSID: "LIVEBOX-1234"}},
+	}
+
+	tests := []struct {
+		name    string
+		adapter network.Interface
+		want    bool
+	}{
+		{"on the named network", network.Interface{Name: "Wi-Fi", DHCP: true, SSID: "LIVEBOX-1234"}, true},
+		{"case differs", network.Interface{Name: "Wi-Fi", DHCP: true, SSID: "livebox-1234"}, true},
+		{"connected to nothing", network.Interface{Name: "Wi-Fi", DHCP: true}, false},
+		{"connected elsewhere", network.Interface{Name: "Wi-Fi", DHCP: true, SSID: "VOISIN"}, false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := len(ActiveIDs([]profile.Profile{p}, []network.Interface{tt.adapter})) == 1
+			if got != tt.want {
+				t.Fatalf("active = %t, want %t", got, tt.want)
+			}
+		})
+	}
+}
+
+// A profile that names no network only changes the address, and stays in effect
+// whatever the adapter is connected to.
+func TestActiveIDsIgnoresTheNetworkWhenTheProfileNamesNone(t *testing.T) {
+	p := profile.Profile{
+		ID:      "adresse-seule",
+		Name:    "Adresse seule",
+		Targets: []profile.Target{{Interface: "Wi-Fi", Mode: profile.ModeDHCP}},
+	}
+	adapter := network.Interface{Name: "Wi-Fi", DHCP: true, SSID: "N_IMPORTE_QUOI"}
+
+	if len(ActiveIDs([]profile.Profile{p}, []network.Interface{adapter})) != 1 {
+		t.Fatal("expected the profile to be in effect regardless of the network")
+	}
+}
+
 func TestActiveIDsIgnoresAProfileWithoutTargets(t *testing.T) {
 	empty := profile.Profile{ID: "vide", Name: "Vide"}
 

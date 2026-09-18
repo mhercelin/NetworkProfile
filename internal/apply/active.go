@@ -1,6 +1,8 @@
 package apply
 
 import (
+	"strings"
+
 	"networkprofile/internal/network"
 	"networkprofile/internal/profile"
 )
@@ -37,6 +39,13 @@ func matches(p profile.Profile, adapters []network.Interface) bool {
 	for _, target := range p.Targets {
 		adapter, found := adapterNamed(target.Interface, adapters)
 		if !found {
+			return false
+		}
+
+		// A profile that names a network is only in effect when the adapter is
+		// on that network. Without this a Wi-Fi profile was reported as applied
+		// while the adapter sat connected to nothing at all.
+		if target.SSID != "" && !strings.EqualFold(adapter.SSID, target.SSID) {
 			return false
 		}
 
