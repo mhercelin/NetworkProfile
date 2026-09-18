@@ -11,7 +11,7 @@ import {
   SaveProfile,
   SetPinned,
 } from '../wailsjs/go/gui/App'
-import { EventsOn } from '../wailsjs/runtime/runtime'
+import { EventsOn, Quit } from '../wailsjs/runtime/runtime'
 
 import { icons } from './icons.js'
 import { clockTime, esc, prefixToMask, uniqueSlug } from './format.js'
@@ -93,7 +93,11 @@ function rail() {
              title="${state.elevated ? "L'assistant élevé tourne : les changements suivants ne redemanderont rien." : 'Les droits seront demandés au premier changement.'}">
           ${icons.shield(13)} ${state.elevated ? 'Droits administrateur actifs' : 'Droits non demandés'}
         </div>
-        <div class="rail__version">v0.1.0</div>
+        <div class="rail__bottom">
+          <span class="rail__version">v0.1.0</span>
+          <button class="btn btn--ghost btn--sm" data-action="quit"
+                  title="Fermer NetworkProfile et son assistant élevé">Quitter</button>
+        </div>
       </div>
     </aside>`
 }
@@ -413,6 +417,13 @@ root.addEventListener('click', (event) => {
     case 'dismiss-error':
       state.error = ''
       render()
+      break
+
+    // Closing the window only hides it, so without this the notification area
+    // is the only way out — and an application with a single way out has none
+    // when that one fails.
+    case 'quit':
+      Quit()
       break
 
     case 'new-profile':

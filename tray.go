@@ -2,6 +2,7 @@ package main
 
 import (
 	_ "embed"
+	"log"
 	"sync"
 
 	"github.com/energye/systray"
@@ -22,8 +23,10 @@ const traySlots = 12
 // away without opening it at all.
 //
 // Wails v2 has no notification area of its own, so the icon runs its own
-// message loop alongside the window's — which is also why every field below is
-// touched from two threads and guarded.
+// message loop alongside the window's. Two rules follow, and both were learned
+// the hard way: never call into the menu while holding the state lock, and
+// never let a menu update block the write that triggered it. The menu is a view
+// of the profiles; a view that stalls must not stall what it shows.
 type tray struct {
 	apply func(id string)
 
@@ -33,6 +36,10 @@ type tray struct {
 	pinned []profile.Profile
 	active string
 	ready  bool
+
+	// renderMu serialises menu updates on their own, so two refreshes cannot
+	// interleave without any of it happening under mu.
+	renderMu sync.Mutex
 }
 
 func newTray(apply func(id string)) *tray {
@@ -42,40 +49,46 @@ func newTray(apply func(id string)) *tray {
 // run blocks on the icon's own message loop; call it in a goroutine.
 func (t *tray) run(show, quit func()) {
 	systray.Run(func() {
+		log.Print("zone de notification : construction du menu")
+
 		systray.SetIcon(trayIcon)
 		systray.SetTooltip("NetworkProfile")
 
 		systray.AddMenuItem("Afficher la fenêtre", "Ouvrir NetworkProfile").Click(show)
 
-		t.mu.Lock()
-
-		// A disabled caption separates the profiles from the two actions that
+		// A disabled caption separates the profiles from the actions that
 		// operate on the application itself; without it the menu is a flat list
 		// where "Quitter" sits among the sites.
 		systray.AddSeparator()
-		t.header = systray.AddMenuItem("Profils épinglés", "")
-		t.header.Disable()
-		t.header.Hide()
+		header := systray.AddMenuItem("Profils épinglés", "")
+		header.Disable()
 
 		// Checkboxes rather than plain entries: the tick is how a menu says
-		// "this is the one you are on", and it is drawn by Windows itself.
+		// "this is the one you are on", and Windows draws it itself.
+		slots := make([]*systray.MenuItem, 0, traySlots)
 		for slot := range traySlots {
 			item := systray.AddMenuItemCheckbox("", "", false)
-			item.Hide()
 			item.Click(func() { t.applySlot(slot) })
-			t.slots = append(t.slots, item)
+			slots = append(slots, item)
 		}
-
-		t.ready = true
-		// Profiles may have been handed over before the menu existed.
-		t.refreshLocked()
-		t.mu.Unlock()
 
 		systray.AddSeparator()
 		systray.AddMenuItem("Quitter", "Fermer NetworkProfile et son assistant élevé").Click(quit)
 
 		// Double-clicking the icon is the habit most people have.
 		systray.SetOnDClick(func(systray.IMenu) { show() })
+
+		t.mu.Lock()
+		t.header = header
+		t.slots = slots
+		t.ready = true
+		pinned, active := t.pinned, t.active
+		t.mu.Unlock()
+
+		log.Printf("zone de notification : menu prêt (%d emplacements)", len(slots))
+
+		// Profiles may have arrived before the menu existed.
+		t.render(header, slots, pinned, active)
 	}, nil)
 }
 
@@ -93,32 +106,38 @@ func (t *tray) SetProfiles(profiles []profile.Profile, active string) {
 	}
 
 	t.mu.Lock()
-	defer t.mu.Unlock()
 	t.pinned = pinned
 	t.active = active
-	t.refreshLocked()
-}
+	ready, header, slots := t.ready, t.header, t.slots
+	t.mu.Unlock()
 
-func (t *tray) refreshLocked() {
-	if !t.ready {
+	if !ready {
+		log.Printf("zone de notification : %d profil(s) épinglé(s) en attente du menu", len(pinned))
 		return
 	}
+	t.render(header, slots, pinned, active)
+}
 
-	if len(t.pinned) == 0 {
-		t.header.Hide()
+// render touches the menu, and never runs under mu.
+func (t *tray) render(header *systray.MenuItem, slots []*systray.MenuItem, pinned []profile.Profile, active string) {
+	t.renderMu.Lock()
+	defer t.renderMu.Unlock()
+
+	if len(pinned) == 0 {
+		header.Hide()
 	} else {
-		t.header.Show()
+		header.Show()
 	}
 
-	for i, item := range t.slots {
-		if i >= len(t.pinned) {
+	for i, item := range slots {
+		if i >= len(pinned) {
 			item.Hide()
 			continue
 		}
 
-		p := t.pinned[i]
+		p := pinned[i]
 		item.SetTitle(p.Name)
-		if p.ID == t.active {
+		if p.ID == active {
 			item.Check()
 			// Re-applying the configuration already in place would only cost an
 			// elevation prompt for nothing.
@@ -129,10 +148,12 @@ func (t *tray) refreshLocked() {
 		}
 		item.Show()
 	}
+
+	log.Printf("zone de notification : %d profil(s) affiché(s), actif=%q", len(pinned), active)
 }
 
 // applySlot resolves the slot under the lock but applies outside it: applying
-// waits on an elevation prompt, and the menu must not be frozen meanwhile.
+// waits on an elevation prompt, and nothing else must be held meanwhile.
 func (t *tray) applySlot(slot int) {
 	t.mu.Lock()
 	if slot >= len(t.pinned) {

@@ -162,7 +162,11 @@ func runInterface() error {
 
 	// The menu follows the stored profiles instead of polling them, and the
 	// window is told so its list stops showing the old active profile.
-	app = gui.New(profile.NewStore(storePath), manager, func() {
+	// Refreshing the two views runs on its own goroutine, and this matters: the
+	// notification area menu is a view of the profiles, and a view that stalls
+	// must never stall the write it is reacting to. Saving a profile is not
+	// allowed to depend on a menu being well.
+	refresh := func() {
 		profiles, err := app.Profiles()
 		if err != nil {
 			log.Printf("relecture des profils : %v", err)
@@ -177,7 +181,9 @@ func runInterface() error {
 		if ctx != nil {
 			wruntime.EventsEmit(ctx, "profiles:changed")
 		}
-	})
+	}
+
+	app = gui.New(profile.NewStore(storePath), manager, func() { go refresh() })
 
 	return wails.Run(&options.App{
 		Title:            "NetworkProfile",
@@ -188,23 +194,24 @@ func runInterface() error {
 		AssetServer:      &assetserver.Options{Assets: assets},
 		BackgroundColour: &options.RGBA{R: 247, G: 248, B: 250, A: 1},
 		Bind:             []any{app},
+		// Quitting through the runtime rather than only from the menu: the icon
+		// was the sole way out, so a menu that fails to open leaves the
+		// application running with no way to stop it.
+		OnShutdown: func(context.Context) {
+			log.Print("arrêt")
+			systray.Quit()
+		},
+
 		OnStartup: func(c context.Context) {
 			ctx = c
-
-			if profiles, err := app.Profiles(); err == nil {
-				active, _ := app.ActiveProfileID()
-				icon.SetProfiles(profiles, active)
-			}
+			go refresh()
 
 			go icon.run(
 				func() {
 					wruntime.WindowUnminimise(c)
 					wruntime.WindowShow(c)
 				},
-				func() {
-					systray.Quit()
-					wruntime.Quit(c)
-				},
+				func() { wruntime.Quit(c) },
 			)
 		},
 

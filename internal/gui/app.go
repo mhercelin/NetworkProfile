@@ -2,6 +2,7 @@ package gui
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"path/filepath"
 	"slices"
@@ -105,8 +106,11 @@ func (a *App) SaveProfile(p profile.Profile) error {
 	}
 
 	if err := a.store.Save(profiles); err != nil {
+		log.Printf("enregistrement de %q : %v", p.ID, err)
 		return err
 	}
+
+	log.Printf("profil %q enregistré (%d au total)", p.ID, len(profiles))
 	a.notifyChanged()
 	return nil
 }
@@ -120,8 +124,11 @@ func (a *App) DeleteProfile(id string) error {
 	for i, p := range profiles {
 		if p.ID == id {
 			if err := a.store.Save(slices.Delete(profiles, i, i+1)); err != nil {
+				log.Printf("suppression de %q : %v", id, err)
 				return err
 			}
+
+			log.Printf("profil %q supprimé", id)
 			a.notifyChanged()
 			return nil
 		}
@@ -140,8 +147,11 @@ func (a *App) SetPinned(id string, pinned bool) error {
 		if profiles[i].ID == id {
 			profiles[i].Pinned = pinned
 			if err := a.store.Save(profiles); err != nil {
+				log.Printf("épinglage de %q : %v", id, err)
 				return err
 			}
+
+			log.Printf("profil %q épinglé=%t", id, pinned)
 			a.notifyChanged()
 			return nil
 		}
