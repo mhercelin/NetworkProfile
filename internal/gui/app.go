@@ -6,6 +6,8 @@ import (
 	"os"
 	"path/filepath"
 	"slices"
+	"sync"
+	"time"
 
 	"networkprofile/internal/apply"
 	"networkprofile/internal/network"
@@ -25,6 +27,21 @@ type App struct {
 	// than a setter because every exported method here is bound to the
 	// frontend, and a callback is not something that survives that crossing.
 	changed func()
+
+	// applied is recorded here rather than in the window, because a profile
+	// applied from the notification area never passes through the window at
+	// all — and the status line was reporting nothing had happened.
+	mu      sync.Mutex
+	applied Applied
+}
+
+// Applied describes the last profile put into effect, whichever surface asked
+// for it. An empty Name means none has been since startup.
+type Applied struct {
+	ID     string `json:"id"`
+	Name   string `json:"name"`
+	At     string `json:"at"`
+	Millis int64  `json:"millis"`
 }
 
 func New(store *profile.Store, manager network.Manager, changed func()) *App {
@@ -167,7 +184,20 @@ func (a *App) ApplyProfile(id string) error {
 
 	for _, p := range profiles {
 		if p.ID == id {
+			started := time.Now()
 			err := a.applier.Apply(p)
+
+			if err == nil {
+				a.mu.Lock()
+				a.applied = Applied{
+					ID:     p.ID,
+					Name:   p.Name,
+					At:     started.Format("15:04"),
+					Millis: time.Since(started).Milliseconds(),
+				}
+				a.mu.Unlock()
+			}
+
 			// Applied or not, the machine may have moved: both the window and
 			// the notification area menu have to be told so neither keeps
 			// showing the previous profile as the active one.
@@ -176,6 +206,14 @@ func (a *App) ApplyProfile(id string) error {
 		}
 	}
 	return fmt.Errorf("profil %q introuvable", id)
+}
+
+// LastApplied reports the profile last put into effect during this run, from
+// either surface.
+func (a *App) LastApplied() Applied {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	return a.applied
 }
 
 // ActiveProfileID reports which stored profile matches what the adapters

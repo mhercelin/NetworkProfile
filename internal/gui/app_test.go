@@ -160,6 +160,47 @@ func TestApplyProfile(t *testing.T) {
 	}
 }
 
+// The status line reads this, and a profile applied from the notification area
+// never passes through the window — so it cannot be the window that remembers.
+func TestLastAppliedRecordsWhicheverSurfaceAsked(t *testing.T) {
+	app, _ := newApp(t)
+	if err := app.SaveProfile(sampleProfile()); err != nil {
+		t.Fatalf("SaveProfile: %v", err)
+	}
+
+	if before := app.LastApplied(); before.Name != "" {
+		t.Fatalf("nothing applied yet, got %+v", before)
+	}
+
+	if err := app.ApplyProfile("site-client-b"); err != nil {
+		t.Fatalf("ApplyProfile: %v", err)
+	}
+
+	applied := app.LastApplied()
+	if applied.ID != "site-client-b" || applied.Name != "Site client B" {
+		t.Fatalf("unexpected record: %+v", applied)
+	}
+	if applied.At == "" {
+		t.Fatal("the time of the change is what the status line shows")
+	}
+}
+
+func TestLastAppliedIgnoresAFailedApplication(t *testing.T) {
+	app, fake := newApp(t)
+	if err := app.SaveProfile(sampleProfile()); err != nil {
+		t.Fatalf("SaveProfile: %v", err)
+	}
+	fake.FailOn = "Ethernet"
+
+	if err := app.ApplyProfile("site-client-b"); err == nil {
+		t.Fatal("expected the application to fail")
+	}
+
+	if applied := app.LastApplied(); applied.Name != "" {
+		t.Fatalf("a refused change must not be reported as applied: %+v", applied)
+	}
+}
+
 func TestApplyProfileReportsAnUnknownID(t *testing.T) {
 	app, fake := newApp(t)
 

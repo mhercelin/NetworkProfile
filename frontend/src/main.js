@@ -7,6 +7,7 @@ import {
   Elevated,
   Interfaces,
   KnownWiFiNetworks,
+  LastApplied,
   Profiles,
   SaveProfile,
   SetPinned,
@@ -154,14 +155,16 @@ function render() {
 
 async function loadAll() {
   try {
-    const [profiles, interfaces, active] = await Promise.all([
+    const [profiles, interfaces, active, applied] = await Promise.all([
       Profiles(),
       Interfaces(),
       ActiveProfileID(),
+      LastApplied(),
     ])
     state.profiles = profiles ?? []
     state.interfaces = interfaces ?? []
     state.activeId = active ?? ''
+    state.lastApplied = applied
     state.fatal = ''
   } catch (err) {
     state.fatal = `Lecture impossible : ${err}`
@@ -203,14 +206,8 @@ async function applyProfile(id) {
   state.applying = id
   render()
 
-  const started = performance.now()
   try {
     await ApplyProfile(id)
-    state.lastApplied = {
-      name: profile?.name ?? id,
-      at: clockTime(),
-      ms: Math.round(performance.now() - started),
-    }
     state.error = ''
   } catch (err) {
     state.error = `${profile?.name ?? id} : ${err}`
@@ -218,6 +215,8 @@ async function applyProfile(id) {
     state.applying = ''
   }
 
+  // What was applied, and when, is recorded in Go: the notification area
+  // applies profiles without the window being involved at all.
   await reloadInterfaces()
 }
 
@@ -226,6 +225,7 @@ async function reloadInterfaces() {
     state.interfaces = (await Interfaces()) ?? []
     state.elevated = await Elevated()
     state.activeId = (await ActiveProfileID()) ?? ''
+    state.lastApplied = await LastApplied()
   } catch (err) {
     state.error = `Lecture des cartes réseau : ${err}`
   }
@@ -591,6 +591,7 @@ EventsOn('profiles:changed', async () => {
     state.interfaces = (await Interfaces()) ?? []
     state.elevated = await Elevated()
     state.activeId = (await ActiveProfileID()) ?? ''
+    state.lastApplied = await LastApplied()
   } catch {
     /* nothing to add: the next action reports its own failure */
   }

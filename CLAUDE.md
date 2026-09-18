@@ -45,6 +45,19 @@ The notification area menu follows the stored profiles through that hook; it is
 never polled. Its slots are created once and then renamed or hidden, because
 Windows offers no way to remove a menu item once added.
 
+**Anything two surfaces need lives in Go, never in the frontend.** The window is
+one way in; the notification area menu and the command line are two others, and
+neither passes through the window at all. Whether a profile is active
+(`apply.Active`) and which was last applied (`App.LastApplied`) were each
+written in JavaScript first, and each was wrong the moment a profile was applied
+from the menu. If a fact is needed by more than the window, it belongs to the
+application, not to its view.
+
+**And a view must never block what it shows.** The refresh hook runs on its own
+goroutine, and `tray` never calls into the menu while holding its state lock:
+an earlier version held that lock across the whole menu construction, so saving
+a profile waited on the notification area and silently never completed.
+
 **Privileges are split, and this is load-bearing.** The target user is not a
 local administrator, so elevation switches to a *different Windows account*.
 Anything keyed on the current account breaks under elevation: `%AppData%` moves,

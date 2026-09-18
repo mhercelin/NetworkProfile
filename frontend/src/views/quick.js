@@ -80,8 +80,8 @@ export function renderQuick(state) {
     </div>
 
     <footer class="statusbar">
-      <span>${state.lastApplied ? `Dernier profil appliqué : ${esc(state.lastApplied.name)}` : 'Aucun profil appliqué depuis le démarrage'}</span>
-      <span class="mono">${state.lastApplied ? `${esc(state.lastApplied.at)} · ${state.lastApplied.ms} ms` : ''}</span>
+      <span>${state.lastApplied?.name ? `Dernier profil appliqué : ${esc(state.lastApplied.name)}` : 'Aucun profil appliqué depuis le démarrage'}</span>
+      <span class="mono">${state.lastApplied?.name ? `${esc(state.lastApplied.at)} · ${state.lastApplied.millis} ms` : ''}</span>
     </footer>
   `
 }
