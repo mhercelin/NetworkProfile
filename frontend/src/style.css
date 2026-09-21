@@ -33,6 +33,11 @@
   --live: oklch(0.55 0.13 150);
   --live-wash: oklch(0.55 0.13 150 / 0.09);
   --live-line: oklch(0.55 0.13 150 / 0.32);
+  /* The same tint, already flattened onto the surface. An active row needs an
+     opaque colour: the sticky actions cell copies the row background, and a
+     translucent copy let the columns scrolling underneath show through it, so
+     the MODE badge appeared beside the Appliquer button. */
+  --live-row: color-mix(in oklch, var(--live) 9%, var(--bg-surface));
 
   /* The three ways an address is obtained, each with its own hue. */
   --static: oklch(0.50 0.12 70);
@@ -319,10 +324,10 @@ input, textarea, select { user-select: text; font-family: inherit; }
 .row:hover { background: #f7f9fa; }
 
 .row--active {
-  background: var(--live-wash);
+  background: var(--live-row);
   box-shadow: inset 2px 0 0 var(--live);
 }
-.row--active:hover { background: var(--live-wash); }
+.row--active:hover { background: var(--live-row); }
 
 .col-name { min-width: 0; display: flex; flex-direction: column; gap: 3px; }
 

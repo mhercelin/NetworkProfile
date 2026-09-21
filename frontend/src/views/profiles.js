@@ -137,7 +137,7 @@ function row(profile, state) {
         </span>
         <span class="row__sub">
           ${subtitle(profile.targets ?? [], state)}
-          ${active ? `<span class="row__applied" title="Les cartes portent déjà cette configuration">${icons.check(11)} en place</span>` : ''}
+          ${active ? `<span class="row__applied" title="Les cartes portent déjà cette configuration">${icons.check(11)} actif</span>` : ''}
         </span>
       </div>
       <div class="col-value">${cell(data.address)}</div>
