@@ -139,7 +139,7 @@ function rail() {
           ${icons.shield(13)} ${state.elevated ? 'Droits administrateur actifs' : 'Droits non demandés'}
         </div>
         <div class="rail__bottom">
-          <span class="rail__version">v0.1.1</span>
+          <span class="rail__version">v0.1.2</span>
           <button class="btn btn--ghost btn--sm" data-action="quit"
                   title="Fermer NetworkProfile et son assistant élevé">Quitter</button>
         </div>

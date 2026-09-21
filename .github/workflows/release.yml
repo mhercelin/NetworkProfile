@@ -74,6 +74,9 @@ jobs:
           files: |
             build/bin/NetworkProfile.exe
             build/bin/checksums.txt
+          # Appended under the text below: the commits since the previous tag,
+          # so a release says what changed without a changelog to keep in step.
+          generate_release_notes: true
           body: |
             ## Installation
 
