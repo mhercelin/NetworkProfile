@@ -176,7 +176,11 @@ input, textarea, select { user-select: text; font-family: inherit; }
 .topbar__title { display: flex; align-items: baseline; gap: 10px; }
 .topbar__title h1 { margin: 0; font-size: 15px; font-weight: 600; letter-spacing: -0.2px; }
 .topbar__count { font-size: 11.5px; color: var(--ink-dim); font-family: var(--mono); }
-.topbar__actions { display: flex; align-items: center; gap: 10px; }
+/* The toolbar has to survive a narrow window: the search box gives up width
+   before the buttons, which have none to give. */
+.topbar__actions { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.topbar__title { min-width: 0; }
+.topbar__title h1 { white-space: nowrap; }
 
 /* ---------- adapter status strip ---------- */
 
@@ -220,30 +224,95 @@ input, textarea, select { user-select: text; font-family: inherit; }
 
 /* ---------- table ---------- */
 
-.thead {
-  height: 30px;
-  flex: 0 0 30px;
+/* The header and every row share one grid, so a column resize is a single
+   custom property rewritten on the container. Below --table-min the table
+   scrolls sideways rather than squeezing values into illegibility: a narrow
+   window must not cost readable addresses.
+
+   One scroll container for both axes. Giving the rows their own vertical scroll
+   made them scroll sideways inside it instead of widening the table, so the
+   header stayed put and nothing ever reached the horizontal scrollbar. */
+.table {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
   background: var(--bg-surface);
-  display: flex;
-  align-items: center;
+}
+
+.thead,
+.row {
+  display: grid;
+  grid-template-columns:
+    minmax(230px, 1fr)
+    var(--w-address) var(--w-gateway) var(--w-dns) var(--w-mode) var(--w-actions);
   gap: 14px;
-  padding: 0 20px;
+  /* The inset lives on the first and last cells, not here: a sticky cell sticks
+     to the content box, so a padding on the grid would leave a strip where the
+     scrolling columns show through beside it. */
+  min-width: var(--table-min);
+}
+
+.thead {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  height: 30px;
+  align-items: center;
   border-bottom: 1px solid var(--line);
+  background: var(--bg-surface);
   font-size: 10px;
   font-weight: 500;
   letter-spacing: 0.7px;
   color: var(--ink-dim);
 }
 
-.rows { flex: 1; min-height: 0; overflow-y: auto; background: var(--bg-surface); }
+.thead__cell { position: relative; display: flex; align-items: center; min-width: 0; }
+
+.thead__sort {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  letter-spacing: inherit;
+  color: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.thead__sort:hover { color: var(--ink-control); }
+.thead__cell.is-sorted { color: var(--accent-deep); }
+.thead__arrow { font-size: 11px; }
+
+/* The grip sits in the gap between two columns. */
+.col-resize {
+  position: absolute;
+  right: -7px;
+  top: 0;
+  bottom: 0;
+  width: 14px;
+  cursor: col-resize;
+}
+
+.col-resize:hover,
+.col-resize.is-dragging { background: var(--accent-wash); }
+
+/* No scroll of its own: the table is the one scroll container. */
+.rows { min-width: var(--table-min); }
 
 .row {
   min-height: 56px;
-  display: flex;
   align-items: center;
-  gap: 14px;
-  padding: 0 20px;
   border-bottom: 1px solid var(--line-row);
+  /* Explicit rather than inherited from the surface: the sticky actions column
+     copies this value, and copying "transparent" would show the rows sliding
+     underneath it. */
+  background: var(--bg-surface);
 }
 
 .row:hover { background: #f7f9fa; }
@@ -254,12 +323,48 @@ input, textarea, select { user-select: text; font-family: inherit; }
 }
 .row--active:hover { background: var(--live-wash); }
 
-.col-name { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
-.col-addr { width: 140px; flex: 0 0 140px; font-family: var(--mono); font-size: 12px; color: var(--ink-strong); }
-.col-gw { width: 120px; flex: 0 0 120px; font-family: var(--mono); font-size: 12px; color: var(--ink-muted); }
-.col-dns { width: 124px; flex: 0 0 124px; font-family: var(--mono); font-size: 12px; color: var(--ink-muted); }
-.col-mode { width: 72px; flex: 0 0 72px; }
-.col-act { width: 156px; flex: 0 0 156px; display: flex; justify-content: flex-end; align-items: center; gap: 4px; }
+.col-name { min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+
+.col-value {
+  min-width: 0;
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--ink-strong);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.col-value--dim { color: var(--ink-muted); }
+.col-mode { min-width: 0; }
+
+/* Pinned to the right edge: a narrow window scrolls the table sideways, and
+   scrolling Appliquer out of reach would take away the one thing every row is
+   there for. The shadow says there is more to the left. */
+.col-act,
+.thead__cell:last-child {
+  position: sticky;
+  right: 0;
+  min-width: 0;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 4px;
+  padding-right: 20px;
+  background: inherit;
+}
+
+.col-name,
+.thead__cell:first-child { padding-left: 20px; }
+
+/* Above the rows it overlaps, and above the sticky header it sits inside. */
+.col-act { z-index: 1; }
+.thead__cell:last-child { z-index: 3; background: var(--bg-surface); }
+
+.table--scrolled .col-act,
+.table--scrolled .thead__cell:last-child {
+  box-shadow: -8px 0 8px -6px rgb(27 32 38 / 0.10);
+}
 
 /* Editing is rarer than applying, so its controls stay out of the way until the
    pointer is on the row. */
@@ -366,12 +471,18 @@ input, textarea, select { user-select: text; font-family: inherit; }
 .field--mono { font-family: var(--mono); }
 .field--invalid { border-color: var(--danger-line); }
 
-.search { display: flex; align-items: center; gap: 8px; width: 208px; height: 30px; padding: 0 10px; background: var(--bg-surface); border: 1px solid var(--line-control); border-radius: 5px; color: #a3abb4; }
+.search { display: flex; align-items: center; gap: 8px; flex: 0 1 208px; min-width: 110px; height: 30px; padding: 0 10px; background: var(--bg-surface); border: 1px solid var(--line-control); border-radius: 5px; color: #a3abb4; }
+.search svg { flex: 0 0 auto; }
 .search:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-wash); }
 .search input { border: 0; outline: none; background: transparent; font: inherit; color: var(--ink); width: 100%; }
 .search input::placeholder { color: #a3abb4; }
 
 select.field { padding-right: 6px; cursor: pointer; }
+
+/* The adapter filter reads as part of the toolbar until it is narrowing the
+   list, at which point it says so. */
+.field--filter { width: auto; max-width: 180px; font-size: 12px; color: var(--ink-muted); }
+.field--filter-on { border-color: var(--accent); color: var(--accent-deep); font-weight: 500; }
 
 /* ---------- forms ---------- */
 

@@ -16,6 +16,7 @@ import { EventsOn, Quit } from '../wailsjs/runtime/runtime'
 
 import { icons } from './icons.js'
 import { clockTime, esc, prefixToMask, uniqueSlug } from './format.js'
+import { DEFAULT_COLUMNS, MIN_COLUMN_WIDTH } from './table.js'
 import { renderProfiles } from './views/profiles.js'
 import { renderForm } from './views/form.js'
 import { renderQuick } from './views/quick.js'
@@ -47,10 +48,53 @@ const state = {
   // Decided in Go, so the window and the notification area menu cannot disagree
   // about it.
   activeIds: [],
+
+  // Table presentation. Column widths and sort survive a restart; the filter
+  // does not, because a list silently narrowed since yesterday is a trap.
+  columns: loadColumns(),
+  sort: loadSort(),
+  filterInterface: '',
 }
 
 // Nearly every network this tool is pointed at is a /24.
 const DEFAULT_MASK = '255.255.255.0'
+
+/* ---------------- table presentation, kept between runs ---------------- */
+
+// Browser storage can be unavailable or hold something stale; neither is worth
+// failing to start over, so a bad read falls back to the defaults.
+function readStored(key, fallback) {
+  try {
+    const raw = localStorage.getItem(key)
+    return raw ? { ...fallback, ...JSON.parse(raw) } : { ...fallback }
+  } catch {
+    return { ...fallback }
+  }
+}
+
+function writeStored(key, value) {
+  try {
+    localStorage.setItem(key, JSON.stringify(value))
+  } catch {
+    /* a width that does not survive a restart is not worth reporting */
+  }
+}
+
+function loadColumns() {
+  const stored = readStored('networkprofile.columns', DEFAULT_COLUMNS)
+  // Clamp on read as well as on drag: a stored width could come from an older
+  // version, or from a hand-edited value.
+  for (const key of Object.keys(DEFAULT_COLUMNS)) {
+    const width = Number(stored[key])
+    stored[key] = Number.isFinite(width) ? Math.max(MIN_COLUMN_WIDTH, Math.round(width)) : DEFAULT_COLUMNS[key]
+  }
+  return stored
+}
+
+function loadSort() {
+  const stored = readStored('networkprofile.sort', { key: '', dir: 'asc' })
+  return { key: String(stored.key ?? ''), dir: stored.dir === 'desc' ? 'desc' : 'asc' }
+}
 
 function blankQuick() {
   return { interface: '', mode: 'dhcp', ssid: '', address: '', mask: '', gateway: '', dns: '' }
@@ -420,6 +464,27 @@ root.addEventListener('click', (event) => {
       render()
       break
 
+    // Clicking the column already sorted reverses it; clicking a third time
+    // gives the stored order back, which is the only way to see the profiles in
+    // the order they were written.
+    case 'sort-by':
+      if (state.sort.key !== trigger.dataset.key) {
+        state.sort = { key: trigger.dataset.key, dir: 'asc' }
+      } else if (state.sort.dir === 'asc') {
+        state.sort = { key: trigger.dataset.key, dir: 'desc' }
+      } else {
+        state.sort = { key: '', dir: 'asc' }
+      }
+      writeStored('networkprofile.sort', state.sort)
+      render()
+      break
+
+    case 'clear-filters':
+      state.search = ''
+      state.filterInterface = ''
+      render()
+      break
+
     // Closing the window only hides it, so without this the notification area
     // is the only way out — and an application with a single way out has none
     // when that one fails.
@@ -550,6 +615,12 @@ root.addEventListener('change', (event) => {
     if (expanded) el.value = expanded
   }
 
+  if (field === 'filter-interface') {
+    state.filterInterface = el.value
+    render()
+    return
+  }
+
   if (field === 'quick-interface' || field === 'quick-ssid') {
     state.quick[field.slice('quick-'.length)] = el.value
     if (field === 'quick-interface') state.quick.ssid = ''
@@ -581,6 +652,53 @@ root.addEventListener('change', (event) => {
     return
   }
   target[field] = field === 'dns' ? parseDNS(el.value) : el.value
+})
+
+// Scroll does not bubble, hence the capture. The class only drives the shadow
+// that tells the reader columns are hidden to the left.
+root.addEventListener(
+  'scroll',
+  (event) => {
+    const table = event.target.closest?.('.table')
+    if (table) table.classList.toggle('table--scrolled', table.scrollLeft > 0)
+  },
+  true,
+)
+
+// Dragging writes straight to the custom property on the table instead of
+// re-rendering: redrawing on every mouse move would rebuild the rows under the
+// pointer and drop the drag.
+root.addEventListener('mousedown', (event) => {
+  const handle = event.target.closest('[data-resize]')
+  if (!handle) return
+
+  const key = handle.dataset.resize
+  const table = root.querySelector('.table')
+  if (!table || !(key in state.columns)) return
+
+  event.preventDefault()
+  const startX = event.clientX
+  const startWidth = state.columns[key]
+  handle.classList.add('is-dragging')
+
+  const move = (moved) => {
+    const width = Math.max(MIN_COLUMN_WIDTH, Math.round(startWidth + moved.clientX - startX))
+    state.columns[key] = width
+    table.style.setProperty(`--w-${key}`, `${width}px`)
+  }
+
+  const stop = () => {
+    document.removeEventListener('mousemove', move)
+    document.removeEventListener('mouseup', stop)
+    handle.classList.remove('is-dragging')
+    writeStored('networkprofile.columns', state.columns)
+    // One redraw at the end, to recompute the width below which the table
+    // scrolls sideways.
+    render()
+  }
+
+  document.addEventListener('mousemove', move)
+  document.addEventListener('mouseup', stop)
 })
 
 // A profile applied from the notification area changes the machine without the

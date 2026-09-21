@@ -1,18 +1,33 @@
 import { icons } from '../icons.js'
-import { cidr, esc } from '../format.js'
+import { esc } from '../format.js'
 import { adaptersStrip, ifaceIcon, modeBadge } from '../components.js'
+import { filterProfiles, interfacesInUse, rowData, sortProfiles } from '../table.js'
+
+const COLUMNS = [
+  // The name column takes whatever the others leave, so widening a value column
+  // narrows it and there is nothing to drag on its own edge.
+  { key: 'name', label: 'PROFIL', resizable: false },
+  { key: 'address', label: 'ADRESSE', resizable: true },
+  { key: 'gateway', label: 'PASSERELLE', resizable: true },
+  { key: 'dns', label: 'DNS', resizable: true },
+  { key: 'mode', label: 'MODE', resizable: true },
+  { key: 'actions', label: '', resizable: false, sortable: false },
+]
 
 export function renderProfiles(state) {
-  const query = state.search.trim().toLowerCase()
-  const matching = state.profiles.filter((p) => !query || p.name.toLowerCase().includes(query))
+  const shown = sortProfiles(
+    filterProfiles(state.profiles, { query: state.search, iface: state.filterInterface }),
+    state.sort,
+  )
 
   return `
     <header class="topbar">
       <div class="topbar__title">
         <h1>Profils</h1>
-        <span class="topbar__count">${state.profiles.length} enregistré${state.profiles.length > 1 ? 's' : ''}</span>
+        <span class="topbar__count">${countLabel(state, shown.length)}</span>
       </div>
       <div class="topbar__actions">
+        ${interfaceFilter(state)}
         <label class="search">
           ${icons.search(13)}
           <input type="search" data-search placeholder="Rechercher un profil…" value="${esc(state.search)}">
@@ -32,16 +47,10 @@ export function renderProfiles(state) {
         : ''
     }
 
-    <div class="thead">
-      <div class="col-name">PROFIL</div>
-      <div class="col-addr">ADRESSE</div>
-      <div class="col-gw">PASSERELLE</div>
-      <div class="col-dns">DNS</div>
-      <div class="col-mode">MODE</div>
-      <div class="col-act"></div>
+    <div class="table" style="${columnStyle(state)}">
+      <div class="thead">${COLUMNS.map((c) => headerCell(c, state)).join('')}</div>
+      <div class="rows">${shown.length ? shown.map((p) => row(p, state)).join('') : emptyState(state)}</div>
     </div>
-
-    <div class="rows">${matching.length ? matching.map((p) => row(p, state)).join('') : emptyState(state)}</div>
 
     <footer class="statusbar">
       <span>${state.lastApplied?.name ? `Dernier profil appliqué : ${esc(state.lastApplied.name)}` : 'Aucun profil appliqué depuis le démarrage'}</span>
@@ -50,33 +59,87 @@ export function renderProfiles(state) {
   `
 }
 
+function countLabel(state, shownCount) {
+  const total = state.profiles.length
+  const plural = total > 1 ? 's' : ''
+  if (shownCount === total) return `${total} enregistré${plural}`
+  return `${shownCount} sur ${total}`
+}
+
+function interfaceFilter(state) {
+  const interfaces = interfacesInUse(state.profiles)
+  if (interfaces.length < 2) return ''
+
+  const options = interfaces
+    .map((name) => `<option value="${esc(name)}"${name === state.filterInterface ? ' selected' : ''}>${esc(name)}</option>`)
+    .join('')
+
+  return `
+    <select class="field field--filter${state.filterInterface ? ' field--filter-on' : ''}"
+            data-field="filter-interface" title="N'afficher que les profils touchant une carte">
+      <option value=""${state.filterInterface ? '' : ' selected'}>Toutes les cartes</option>
+      ${options}
+    </select>`
+}
+
+// The widths live in a custom property so the header and every row share one
+// grid, and a drag only has to rewrite this one line.
+function columnStyle(state) {
+  const widths = state.columns
+  // 230 is what the name column needs before a name like
+  // "Ethernet — 10.142.20.9" starts being clipped. The name identifies the row,
+  // so it gets its width and the table scrolls instead.
+  const total = 230 + widths.address + widths.gateway + widths.dns + widths.mode + widths.actions
+
+  return [
+    `--w-address: ${widths.address}px`,
+    `--w-gateway: ${widths.gateway}px`,
+    `--w-dns: ${widths.dns}px`,
+    `--w-mode: ${widths.mode}px`,
+    `--w-actions: ${widths.actions}px`,
+    `--table-min: ${total}px`,
+  ].join('; ')
+}
+
+function headerCell(column, state) {
+  const sorted = state.sort?.key === column.key
+  const arrow = sorted ? (state.sort.dir === 'desc' ? '↓' : '↑') : ''
+  const handle = column.resizable ? `<span class="col-resize" data-resize="${column.key}" title="Redimensionner"></span>` : ''
+
+  if (column.sortable === false) {
+    return `<div class="thead__cell">${handle}</div>`
+  }
+
+  return `
+    <div class="thead__cell${sorted ? ' is-sorted' : ''}">
+      <button class="thead__sort" data-action="sort-by" data-key="${column.key}"
+              title="Trier par ${column.label.toLowerCase()}">
+        ${column.label}<span class="thead__arrow">${arrow}</span>
+      </button>
+      ${handle}
+    </div>`
+}
+
 function row(profile, state) {
-  const targets = profile.targets ?? []
-  const single = targets.length === 1 ? targets[0] : null
-  const allDHCP = targets.every((t) => t.mode === 'dhcp')
+  const data = rowData(profile)
   // Several profiles can be in effect at once, one per adapter.
   const active = state.activeIds.includes(profile.id)
   const busy = state.applying === profile.id
 
-  const address = single && single.mode === 'static' ? cidr(single.address, single.mask) : ''
-  const gateway = single ? single.gateway : ''
-  const dnsList = single ? (single.dns ?? []) : []
-  const dns = dnsList.length > 1 ? `${dnsList[0]} +${dnsList.length - 1}` : (dnsList[0] ?? '')
-
   return `
     <div class="row${active ? ' row--active' : ''}">
       <div class="col-name">
-        <span class="row__name" title="${esc(profile.name)}">
+        <span class="row__name" title="${esc(data.name)}">
           <span class="row__pin${profile.pinned ? '' : ' row__pin--none'}"
                 title="${profile.pinned ? 'Épinglé dans la zone de notification' : ''}">${icons.pin(12)}</span>
-          ${esc(profile.name)}
+          ${esc(data.name)}
         </span>
-        <span class="row__sub">${subtitle(targets, state)}</span>
+        <span class="row__sub">${subtitle(profile.targets ?? [], state)}</span>
       </div>
-      <div class="col-addr">${cell(address)}</div>
-      <div class="col-gw">${cell(gateway)}</div>
-      <div class="col-dns">${cell(dns)}</div>
-      <div class="col-mode">${modeBadge(!allDHCP)}</div>
+      <div class="col-value">${cell(data.address)}</div>
+      <div class="col-value col-value--dim">${cell(data.gateway)}</div>
+      <div class="col-value col-value--dim">${cell(data.dns)}</div>
+      <div class="col-mode">${modeBadge(data.mode === 'STATIQUE')}</div>
       <div class="col-act">${actions(profile, active, busy, state)}</div>
     </div>`
 }
@@ -125,12 +188,15 @@ function kindOf(target, state) {
 }
 
 function cell(value) {
-  return value ? esc(value) : '<span class="empty-cell">—</span>'
+  return value ? `<span title="${esc(value)}">${esc(value)}</span>` : '<span class="empty-cell">—</span>'
 }
 
 function emptyState(state) {
-  if (state.search.trim()) {
-    return `<div class="empty"><span>Aucun profil ne correspond à « ${esc(state.search)} ».</span></div>`
+  if (state.search.trim() || state.filterInterface) {
+    return `<div class="empty">
+      <span>Aucun profil ne correspond au filtre.</span>
+      <button class="btn btn--sm" data-action="clear-filters">Effacer le filtre</button>
+    </div>`
   }
   return `<div class="empty">
     <span>Aucun profil enregistré.</span>
