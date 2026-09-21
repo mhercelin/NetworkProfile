@@ -400,10 +400,34 @@ input, textarea, select { user-select: text; font-family: inherit; }
 .row__pin--none { visibility: hidden; }
 .row__tools .btn.is-pinned { color: var(--accent); }
 
-.row__sub { display: flex; align-items: center; gap: 6px; font-size: 11.5px; color: var(--ink-faint); white-space: nowrap; }
+.row__sub {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  font-size: 11.5px;
+  color: var(--ink-faint);
+  white-space: nowrap;
+  overflow: hidden;
+}
 .empty-cell { color: var(--ink-ghost); }
 
-.row__applied { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--live); font-weight: 500; }
+/* A standing state, not the receipt of a click: it sits with the adapter name
+   on the second line and never moves. */
+.row__applied {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 3px;
+  padding: 0 6px 0 4px;
+  border: 1px solid var(--live-line);
+  border-radius: 9px;
+  /* Not --live-wash: the active row is already washed in it, and a chip the
+     same colour as what it sits on is no chip at all. */
+  background: var(--bg-surface);
+  color: var(--live);
+  font-weight: 500;
+}
 
 /* ---------- badges ---------- */
 

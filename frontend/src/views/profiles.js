@@ -135,7 +135,10 @@ function row(profile, state) {
                 title="${profile.pinned ? 'Épinglé dans la zone de notification' : ''}">${icons.pin(12)}</span>
           ${esc(data.name)}
         </span>
-        <span class="row__sub">${subtitle(profile.targets ?? [], state)}</span>
+        <span class="row__sub">
+          ${subtitle(profile.targets ?? [], state)}
+          ${active ? `<span class="row__applied" title="Les cartes portent déjà cette configuration">${icons.check(11)} en place</span>` : ''}
+        </span>
       </div>
       <div class="col-value">${cell(data.address)}</div>
       <div class="col-value col-value--dim">${cell(data.gateway)}</div>
@@ -161,6 +164,11 @@ function actions(profile, active, busy, state) {
   // state, and an inference that turns out wrong must never be able to lock the
   // operator out of applying it — which is exactly what happened when a Wi-Fi
   // profile was wrongly reported as active and had no button left to click.
+  //
+  // The "in effect" mark belongs on the profile name, not here: a tick that
+  // appears beside the button the moment it is pressed reads as "done", and one
+  // that is still there an hour later then looks stuck. Beside the name it
+  // reads as what it is — a property of the row.
   return `
     <span class="row__tools">
       <button class="btn btn--ghost${profile.pinned ? ' is-pinned' : ''}" data-action="toggle-pin" data-id="${esc(profile.id)}"
@@ -168,7 +176,6 @@ function actions(profile, active, busy, state) {
       <button class="btn btn--ghost" data-action="edit-profile" data-id="${esc(profile.id)}" title="Modifier">${icons.pencil(14)}</button>
       <button class="btn btn--ghost btn--danger" data-action="delete-profile" data-id="${esc(profile.id)}" title="Supprimer">${icons.trash(14)}</button>
     </span>
-    ${active ? `<span class="row__applied" title="Cette configuration est celle en place">${icons.check(14)}</span>` : ''}
     <button class="btn btn--sm" data-action="apply-profile" data-id="${esc(profile.id)}"${busy ? ' disabled' : ''}>${busy ? 'En cours…' : 'Appliquer'}</button>`
 }
 
