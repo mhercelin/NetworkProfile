@@ -1,16 +1,34 @@
 import { cidr } from './format.js'
 
-// Column widths in pixels. The name column takes what is left, so it has no
-// entry here.
+// Column widths in pixels. Every column has one, including the name: leaving it
+// to take whatever was left made it eat three quarters of a maximised window
+// for nothing, with no handle to pull it back.
 export const DEFAULT_COLUMNS = {
+  name: 260,
   address: 140,
   gateway: 120,
   dns: 124,
   mode: 72,
-  actions: 156,
+  actions: 210,
 }
 
-export const MIN_COLUMN_WIDTH = 60
+// Per column, because one figure cannot fit all of them: the actions column
+// holds three tools, a marker and a button, and below 200 its contents spill
+// left over the column beside it.
+export const MIN_COLUMN_WIDTHS = {
+  name: 160,
+  address: 100,
+  gateway: 90,
+  dns: 80,
+  mode: 64,
+  actions: 200,
+}
+
+export function clampColumn(key, width) {
+  const min = MIN_COLUMN_WIDTHS[key] ?? 60
+  const value = Number(width)
+  return Number.isFinite(value) ? Math.max(min, Math.round(value)) : DEFAULT_COLUMNS[key]
+}
 
 // rowData pulls out what a row shows, once, so the table and the sort cannot
 // disagree about what is in a column.

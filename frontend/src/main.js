@@ -16,7 +16,7 @@ import { EventsOn, Quit } from '../wailsjs/runtime/runtime'
 
 import { icons } from './icons.js'
 import { clockTime, esc, prefixToMask, uniqueSlug } from './format.js'
-import { DEFAULT_COLUMNS, MIN_COLUMN_WIDTH } from './table.js'
+import { clampColumn, DEFAULT_COLUMNS } from './table.js'
 import { renderProfiles } from './views/profiles.js'
 import { renderForm } from './views/form.js'
 import { renderQuick } from './views/quick.js'
@@ -83,10 +83,9 @@ function writeStored(key, value) {
 function loadColumns() {
   const stored = readStored('networkprofile.columns', DEFAULT_COLUMNS)
   // Clamp on read as well as on drag: a stored width could come from an older
-  // version, or from a hand-edited value.
+  // version, with a column that has since gained a wider minimum.
   for (const key of Object.keys(DEFAULT_COLUMNS)) {
-    const width = Number(stored[key])
-    stored[key] = Number.isFinite(width) ? Math.max(MIN_COLUMN_WIDTH, Math.round(width)) : DEFAULT_COLUMNS[key]
+    stored[key] = clampColumn(key, stored[key])
   }
   return stored
 }
@@ -682,7 +681,7 @@ root.addEventListener('mousedown', (event) => {
   handle.classList.add('is-dragging')
 
   const move = (moved) => {
-    const width = Math.max(MIN_COLUMN_WIDTH, Math.round(startWidth + moved.clientX - startX))
+    const width = clampColumn(key, startWidth + moved.clientX - startX)
     state.columns[key] = width
     table.style.setProperty(`--w-${key}`, `${width}px`)
   }

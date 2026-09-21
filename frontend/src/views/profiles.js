@@ -3,14 +3,16 @@ import { esc } from '../format.js'
 import { adaptersStrip, ifaceIcon, modeBadge } from '../components.js'
 import { filterProfiles, interfacesInUse, rowData, sortProfiles } from '../table.js'
 
+// The spacer sits between the last value column and the actions, and absorbs
+// whatever a wide window leaves over. Without it that slack fell to the name
+// column, which then filled three quarters of a maximised screen for nothing.
 const COLUMNS = [
-  // The name column takes whatever the others leave, so widening a value column
-  // narrows it and there is nothing to drag on its own edge.
-  { key: 'name', label: 'PROFIL', resizable: false },
+  { key: 'name', label: 'PROFIL', resizable: true },
   { key: 'address', label: 'ADRESSE', resizable: true },
   { key: 'gateway', label: 'PASSERELLE', resizable: true },
   { key: 'dns', label: 'DNS', resizable: true },
   { key: 'mode', label: 'MODE', resizable: true },
+  { key: 'spacer', label: '', resizable: false, sortable: false },
   { key: 'actions', label: '', resizable: false, sortable: false },
 ]
 
@@ -86,17 +88,16 @@ function interfaceFilter(state) {
 // grid, and a drag only has to rewrite this one line.
 function columnStyle(state) {
   const widths = state.columns
-  // 230 is what the name column needs before a name like
-  // "Ethernet — 10.142.20.9" starts being clipped. The name identifies the row,
-  // so it gets its width and the table scrolls instead.
-  const total = 230 + widths.address + widths.gateway + widths.dns + widths.mode + widths.actions
+  // Six gaps for seven columns. The 20px inset on either end is inside the
+  // first and last tracks, not beside them, so it is not added again here.
+  const gaps = 14 * 6
+  const total =
+    widths.name + widths.address + widths.gateway + widths.dns + widths.mode + widths.actions + gaps
 
   return [
-    `--w-address: ${widths.address}px`,
-    `--w-gateway: ${widths.gateway}px`,
-    `--w-dns: ${widths.dns}px`,
-    `--w-mode: ${widths.mode}px`,
-    `--w-actions: ${widths.actions}px`,
+    ...Object.entries(widths).map(([key, width]) => `--w-${key}: ${width}px`),
+    // Below this the table scrolls sideways rather than squeezing values into
+    // illegibility.
     `--table-min: ${total}px`,
   ].join('; ')
 }
@@ -107,7 +108,7 @@ function headerCell(column, state) {
   const handle = column.resizable ? `<span class="col-resize" data-resize="${column.key}" title="Redimensionner"></span>` : ''
 
   if (column.sortable === false) {
-    return `<div class="thead__cell">${handle}</div>`
+    return `<div class="thead__cell thead__cell--${column.key}">${handle}</div>`
   }
 
   return `
@@ -140,6 +141,7 @@ function row(profile, state) {
       <div class="col-value col-value--dim">${cell(data.gateway)}</div>
       <div class="col-value col-value--dim">${cell(data.dns)}</div>
       <div class="col-mode">${modeBadge(data.mode === 'STATIQUE')}</div>
+      <div class="col-spacer"></div>
       <div class="col-act">${actions(profile, active, busy, state)}</div>
     </div>`
 }

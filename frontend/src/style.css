@@ -243,8 +243,9 @@ input, textarea, select { user-select: text; font-family: inherit; }
 .row {
   display: grid;
   grid-template-columns:
-    minmax(230px, 1fr)
-    var(--w-address) var(--w-gateway) var(--w-dns) var(--w-mode) var(--w-actions);
+    var(--w-name) var(--w-address) var(--w-gateway) var(--w-dns) var(--w-mode)
+    minmax(0, 1fr)
+    var(--w-actions);
   gap: 14px;
   /* The inset lives on the first and last cells, not here: a sticky cell sticks
      to the content box, so a padding on the grid would leave a strip where the
@@ -337,6 +338,12 @@ input, textarea, select { user-select: text; font-family: inherit; }
 
 .col-value--dim { color: var(--ink-muted); }
 .col-mode { min-width: 0; }
+
+/* Slack column. A wide window has to put its spare width somewhere, and every
+   named column is a width the operator chose; this one is the only one allowed
+   to stretch. It collapses to nothing once the table is at --table-min. */
+.col-spacer,
+.thead__cell--spacer { min-width: 0; }
 
 /* Pinned to the right edge: a narrow window scrolls the table sideways, and
    scrolling Appliquer out of reach would take away the one thing every row is

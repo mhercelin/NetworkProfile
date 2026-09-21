@@ -1,8 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import {
+  clampColumn,
   compareAddresses,
+  DEFAULT_COLUMNS,
   filterProfiles,
   interfacesInUse,
+  MIN_COLUMN_WIDTHS,
   rowData,
   sortProfiles,
 } from './table.js'
@@ -189,5 +192,37 @@ describe('interfacesInUse', () => {
 
   it('is empty without profiles', () => {
     expect(interfacesInUse([])).toEqual([])
+  })
+})
+
+describe('clampColumn', () => {
+  it('keeps a width that is wide enough', () => {
+    expect(clampColumn('name', 300)).toBe(300)
+  })
+
+  it('rounds to whole pixels', () => {
+    expect(clampColumn('name', 300.6)).toBe(301)
+  })
+
+  // The actions column holds three tools, a marker and a button; narrower than
+  // its minimum its contents spilled left over the column beside it.
+  it('holds every column at its own minimum', () => {
+    for (const [key, min] of Object.entries(MIN_COLUMN_WIDTHS)) {
+      expect(clampColumn(key, 10)).toBe(min)
+    }
+    expect(MIN_COLUMN_WIDTHS.actions).toBeGreaterThan(MIN_COLUMN_WIDTHS.mode)
+  })
+
+  // A stored width can come from an older version, or from a hand-edited file.
+  it('falls back to the default for anything unreadable', () => {
+    expect(clampColumn('name', undefined)).toBe(DEFAULT_COLUMNS.name)
+    expect(clampColumn('name', 'wide')).toBe(DEFAULT_COLUMNS.name)
+    expect(clampColumn('name', Infinity)).toBe(DEFAULT_COLUMNS.name)
+  })
+
+  it('every default is at least its own minimum', () => {
+    for (const [key, min] of Object.entries(MIN_COLUMN_WIDTHS)) {
+      expect(DEFAULT_COLUMNS[key]).toBeGreaterThanOrEqual(min)
+    }
   })
 })
